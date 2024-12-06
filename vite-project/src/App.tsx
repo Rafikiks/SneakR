@@ -1,13 +1,22 @@
-import Navbar from './components/Navbar';
-import Sneakers from './components/SneakerList'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Navbar from './components/Navbar'; // Barre de navigation mise à jour
+import HomePage from './page/HomePage';
+import SneakersList from './components/SneakerList';
+import LoginPage from './page/LoginPage';
 
-function App() {
+const App = () => {
   return (
-    <div >
+    <Router>
+      {/* La barre de navigation visible sur toutes les pages */}
       <Navbar />
-      <Sneakers />
-      <h2>Bienvenue sur SneakR</h2>
-    </div>
-    );
-    }
-    export default App;
+      <Routes>
+        {/* Définir les routes pour naviguer */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/sneakers" element={<SneakersList />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
