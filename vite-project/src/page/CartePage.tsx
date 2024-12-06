@@ -45,6 +45,11 @@ const ProductPrice = styled.p`
   color: #4CAF50;
 `;
 
+const ProductSize = styled.p`
+  font-size: 1rem;
+  color: #333;
+`;
+
 const RemoveButton = styled.button`
   background-color: #ff4d4d;
   color: white;
@@ -98,6 +103,7 @@ const CartPage = () => {
     fetchCartItems();
   }, []); // Le tableau vide [] signifie que l'effet s'exécute une seule fois après le montage
 
+  // Calcul du total du panier
   const totalPrice = cartItems.reduce((total, item) => total + item.price, 0);
 
   if (loading) {
@@ -115,7 +121,10 @@ const CartPage = () => {
           <CartItem key={item.id}>
             <ProductDetails>
               <ProductImage src={item.imageUrl} alt={item.name} />
-              <ProductName>{item.name}</ProductName>
+              <div>
+                <ProductName>{item.name}</ProductName>
+                <ProductSize><strong>Taille :</strong> {item.selectedSize}</ProductSize> {/* Afficher la taille */}
+              </div>
             </ProductDetails>
             <ProductPrice>{item.price.toFixed(2)} €</ProductPrice>
             <RemoveButton onClick={() => handleRemoveItem(item.id)}>

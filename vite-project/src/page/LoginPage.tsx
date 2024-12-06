@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
-// Importer les logos des réseaux sociaux
 import GoogleLogo from '../assets/google-logo.png';
 import FacebookLogo from '../assets/facebook-logo.png';
 import AppleLogo from '../assets/apple-logo.png';
 import XLogo from '../assets/x-logo.png';
-import Logo from '../assets/logo.png'; // Logo principal
+import Logo from '../assets/logo.png'; 
 
-// Conteneur principal pour la page
 const LoginPageContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -19,7 +17,6 @@ const LoginPageContainer = styled.div`
   padding-top: 100px; /* Décale le contenu du haut */
 `;
 
-// Conteneur pour la bandelète avec le logo
 const LogoBandContainer = styled.div`
   background-color: #fff;
   width: 100%;
@@ -35,16 +32,16 @@ const LogoBandContainer = styled.div`
 `;
 
 const LogoImage = styled.img`
-  height: 80px; /* Logo plus grand */
+  height: 80px; 
   cursor: pointer;
   transition: transform 0.3s ease;
 
   &:hover {
-    transform: scale(1.1); /* Agrandissement du logo */
+    transform: scale(1.1); 
   }
 `;
 
-// Conteneur du formulaire, forme carrée et épurée
+
 const FormContainer = styled.form`
   display: flex;
   flex-direction: column;
