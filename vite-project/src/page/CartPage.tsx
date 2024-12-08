@@ -76,11 +76,19 @@ const CartPage = () => {
   const [loading, setLoading] = useState(true); // Pour gérer le chargement
   const [error, setError] = useState<string | null>(null); // Pour gérer les erreurs
 
+  // Supposons que l'ID du produit est stocké dans un tableau ou un autre mécanisme
+  const cartProductIds = [3109, 456, 1234]; // Liste d'IDs pour les produits du panier
+
   // Fonction pour récupérer les données du panier via l'API
   const fetchCartItems = async () => {
     try {
-      const response = await axios.get('http://54.37.12.181:1337/api/sneakers/456'); // Remplacez par l'URL de votre API
-      setCartItems(response.data); // Stocke les articles du panier dans le state
+      const fetchedItems = await Promise.all(
+        cartProductIds.map(async (id) => {
+          const response = await axios.get(`http://54.37.12.181:1337/api/sneakers/${id}`);
+          return response.data;
+        })
+      );
+      setCartItems(fetchedItems); // Stocke les articles du panier dans le state
       setLoading(false);
     } catch (error) {
       setError('Erreur lors du chargement des produits du panier');
@@ -91,7 +99,7 @@ const CartPage = () => {
   // Fonction pour retirer un article du panier
   const handleRemoveItem = async (id: number) => {
     try {
-      await axios.delete(`/api/cart/${id}`); // Remplacez par l'URL de l'API pour supprimer un article
+      await axios.delete(`http://54.37.12.181:1337/api/cart/${id}`); // Remplacez par l'URL de l'API pour supprimer un article
       setCartItems(cartItems.filter((item) => item.id !== id)); // Met à jour le panier localement
     } catch (error) {
       setError('Erreur lors de la suppression de l\'article');

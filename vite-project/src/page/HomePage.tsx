@@ -6,35 +6,33 @@ import { Link } from 'react-router-dom';
 // Fond général et structure de la page
 const Container = styled.div`
   font-family: 'Helvetica Neue', sans-serif;
-  background-color: #f5f5f5; /* Fond clair pour donner de l'espace */
+  background-color: #f5f5f5;
   color: #333;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 0 20px;
-  overflow-x: hidden; /* Empêche le défilement horizontal */
+  overflow-x: hidden;
 `;
 
 const HeroSection = styled.section`
   width: 100%;
   height: 100vh;
-  background-image: url('https://example.com/hero-image.jpg'); /* Changez l'URL par une vraie image */
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  color: white;
-  padding: 0 40px;
   position: relative;
-  background-attachment: fixed; /* Effet Parallax */
-  z-index: 1;
-  filter: brightness(50%); /* Assombrir un peu l'image de fond */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 `;
 
 const HeroContent = styled.div`
   z-index: 2;
+  text-align: center;
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   max-width: 900px;
 `;
 
@@ -66,22 +64,25 @@ const ShopButton = styled(Link)`
   text-transform: uppercase;
   letter-spacing: 1px;
   transition: all 0.3s ease;
+  display: inline-block;
   
+  /* Responsivité : ajustement pour les petits écrans */
+  @media (max-width: 768px) {
+    padding: 12px 25px;
+    font-size: 1.2rem;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px 20px;
+  }
+
   &:hover {
     background-color: #333;
-    transform: translateY(-5px); /* Effet de survol avec déplacement */
+    transform: translateY(-5px);
     box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
   }
-`;
-
-const SneakersGrid = styled.section`
-  width: 100%;
-  max-width: 1200px;
-  margin-top: 40px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
-  padding: 20px;
 `;
 
 const SneakerCard = styled.div`
@@ -131,16 +132,74 @@ const ErrorMessage = styled.p`
   margin-top: 20px;
 `;
 
+// Carrousel styles
+const CarouselWrapper = styled.div`
+  width: 100%;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  overflow: hidden;
+`;
+
+const CarouselTrack = styled.div`
+  display: flex;
+  transition: transform 0.5s ease;
+`;
+
+const CarouselImage = styled.div<{ imageUrl: string }>`
+  width: 100vw;
+  height: 100vh;
+  background-image: ${(props) => `url(${props.imageUrl})`};
+  background-size: cover;
+  background-position: center;
+`;
+
+const CarouselButton = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 2rem;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 10;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+`;
+
+const PrevButton = styled(CarouselButton)`
+  left: 10px;
+`;
+
+const NextButton = styled(CarouselButton)`
+  right: 10px;
+`;
+
 const HomePage = () => {
   const [sneakers, setSneakers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const urbanImages = [
+    '/assets/urban-style1.jpg',
+    '/assets/urban-style2.jpg',
+    '/assets/urban-style3.jpg',
+    '/assets/urban-style4.jpg',
+  ];
+
   useEffect(() => {
     const fetchSneakers = async () => {
       try {
         const response = await axios.get('http://54.37.12.181:1337/api/sneakers');
-        setSneakers(response.data.data); // Structure des données de l'API
+        setSneakers(response.data.data);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -152,13 +211,33 @@ const HomePage = () => {
     fetchSneakers();
   }, []);
 
+  const goToNext = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % urbanImages.length);
+  };
+
+  const goToPrev = () => {
+    setCurrentIndex(
+      (prevIndex) => (prevIndex - 1 + urbanImages.length) % urbanImages.length
+    );
+  };
+
   if (loading) return <div>Chargement...</div>;
   if (error) return <ErrorMessage>{error}</ErrorMessage>;
 
   return (
     <Container>
-      {/* Section principale avec l'image de fond et texte */}
       <HeroSection>
+        <CarouselWrapper>
+          <CarouselTrack style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
+            {urbanImages.map((image, index) => (
+              <CarouselImage key={index} imageUrl={image} />
+            ))}
+          </CarouselTrack>
+
+          <PrevButton onClick={goToPrev}>‹</PrevButton>
+          <NextButton onClick={goToNext}>›</NextButton>
+        </CarouselWrapper>
+
         <HeroContent>
           <HeroTitle>Explorez les dernières sneakers</HeroTitle>
           <HeroSubtitle>La meilleure sélection de sneakers, directement à portée de main.</HeroSubtitle>
@@ -166,19 +245,18 @@ const HomePage = () => {
         </HeroContent>
       </HeroSection>
 
-      {/* Section Grille des Sneakers */}
       <h2>Nos Sneakers Populaires</h2>
-      <SneakersGrid>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '30px' }}>
         {sneakers.slice(0, 10).map((sneaker: any) => (
           <SneakerCard key={sneaker.id}>
-            <SneakerImage src={sneaker.imageUrl} alt={sneaker.name} />
+            <SneakerImage src={sneaker.attributes.image.original} alt={sneaker.attributes.name} />
             <SneakerInfo>
-              <SneakerName>{sneaker.name}</SneakerName>
-              <SneakerPrice>{sneaker.price} €</SneakerPrice>
+              <SneakerName>{sneaker.attributes.name}</SneakerName>
+              <SneakerPrice>{sneaker.attributes.retailPrice} €</SneakerPrice>
             </SneakerInfo>
           </SneakerCard>
         ))}
-      </SneakersGrid>
+      </div>
     </Container>
   );
 };

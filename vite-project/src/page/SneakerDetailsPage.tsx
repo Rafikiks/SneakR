@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Remplacer useHistory par useNavigate
-import axios from "axios";
-import styled from "styled-components";
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import styled from 'styled-components';
+import { useCart } from '../context/CartContext';
 
-// Définir le type des données de la sneaker
 interface Sneaker {
   id: number;
   brand: string;
@@ -12,7 +12,7 @@ interface Sneaker {
   gender: string;
   image: {
     original: string;
-    "360": string[];
+    '360': string[];
   };
 }
 
@@ -73,12 +73,6 @@ const DetailValue = styled.div`
   font-weight: 400;
 `;
 
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 30px;
-`;
 
 const Button = styled.button`
   padding: 10px 20px;
@@ -117,14 +111,15 @@ const SizeSelector = styled.select`
 
 const SneakerDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate(); // Remplacer useHistory par useNavigate
+  const navigate = useNavigate();
+  const { addToCart } = useCart();  // Utilisation de la fonction addToCart depuis le contexte du panier
   const [sneaker, setSneaker] = useState<Sneaker | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [selectedSize, setSelectedSize] = useState<string>(""); // Taille sélectionnée
+  const [selectedSize, setSelectedSize] = useState<string>('');
 
-  // Récupération des détails de la sneaker
+  // Récupération des détails de la sneaker depuis l'API
   const fetchSneakerDetails = async () => {
     try {
       const response = await axios.get(
@@ -142,13 +137,13 @@ const SneakerDetailsPage = () => {
           image: data.data.attributes.image,
         });
       } else {
-        throw new Error("Les détails de la sneaker ne sont pas disponibles.");
+        throw new Error('Les détails de la sneaker ne sont pas disponibles.');
       }
 
       setLoading(false);
     } catch (err) {
-      console.error("Erreur lors du chargement des détails", err);
-      setError("Une erreur est survenue lors du chargement des détails.");
+      console.error('Erreur lors du chargement des détails', err);
+      setError('Une erreur est survenue lors du chargement des détails.');
       setLoading(false);
     }
   };
@@ -160,42 +155,31 @@ const SneakerDetailsPage = () => {
   if (loading) return <LoadingMessage>Chargement...</LoadingMessage>;
   if (error) return <ErrorMessage>{error}</ErrorMessage>;
 
-  const handlePrevImage = () => {
-    if (sneaker && sneaker.image["360"].length > 0) {
-      setCurrentImageIndex((prevIndex) =>
-        prevIndex === 0 ? sneaker.image["360"].length - 1 : prevIndex - 1
-      );
+  // Fonction pour changer l'image en fonction du mouvement de la souris
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (sneaker && sneaker.image['360'].length > 0) {
+      const imageWidth = e.currentTarget.offsetWidth; // Récupère la largeur de l'élément contenant l'image
+      const mouseX = e.nativeEvent.offsetX; // Position horizontale de la souris dans l'élément
+      const index = Math.floor((mouseX / imageWidth) * sneaker.image['360'].length); // Calcul de l'index de l'image
+      setCurrentImageIndex(index); // Met à jour l'index de l'image affichée
     }
   };
 
-  const handleNextImage = () => {
-    if (sneaker && sneaker.image["360"].length > 0) {
-      setCurrentImageIndex((prevIndex) =>
-        prevIndex === sneaker.image["360"].length - 1 ? 0 : prevIndex + 1
-      );
-    }
-  };
-
+  // Fonction pour ajouter un produit au panier
   const handleAddToCart = () => {
     if (selectedSize) {
-      // On ajoute l'article au panier dans le localStorage
       const cartItem = {
-        id: sneaker?.id,
-        brand: sneaker?.brand,
-        colorway: sneaker?.colorway,
+        id: sneaker?.id!,
+        name: sneaker?.brand!,
+        price: sneaker?.estimatedMarketValue!,
+        imageUrl: sneaker?.image.original!,
         size: selectedSize,
-        price: sneaker?.estimatedMarketValue,
-        imageUrl: sneaker?.image.original,
       };
 
-      let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      cart.push(cartItem);
-      localStorage.setItem("cart", JSON.stringify(cart));
-
-      // Redirection vers la page du panier
-      navigate("/cart"); // Utiliser navigate pour la redirection
+      addToCart(cartItem); // Ajouter l'article au panier via le contexte
+      navigate('/cart'); // Redirection vers la page du panier
     } else {
-      alert("Veuillez sélectionner une taille avant d'ajouter au panier.");
+      alert('Veuillez sélectionner une taille avant d\'ajouter au panier.');
     }
   };
 
@@ -205,21 +189,20 @@ const SneakerDetailsPage = () => {
         {sneaker?.brand} - {sneaker?.colorway}
       </Title>
 
-      {/* Affichage de l'image ou carrousel 360° */}
-      {sneaker?.image["360"] && sneaker.image["360"].length > 0 ? (
-        <>
+      {/* Section de l'image de la sneaker */}
+      <div
+        onMouseMove={handleMouseMove} // Détection du mouvement de la souris
+        style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}
+      >
+        {sneaker?.image['360'] && sneaker.image['360'].length > 0 ? (
           <SneakerImage
-            src={sneaker.image["360"][currentImageIndex]}
+            src={sneaker.image['360'][currentImageIndex]} // Image actuelle en fonction du mouvement de la souris
             alt={sneaker?.brand}
           />
-          <ButtonContainer>
-            <Button onClick={handlePrevImage}>Précédent</Button>
-            <Button onClick={handleNextImage}>Suivant</Button>
-          </ButtonContainer>
-        </>
-      ) : (
-        <SneakerImage src={sneaker?.image.original} alt={sneaker?.brand} />
-      )}
+        ) : (
+          <SneakerImage src={sneaker?.image.original} alt={sneaker?.brand} />
+        )}
+      </div>
 
       <DetailsContainer>
         <DetailItem>
@@ -240,7 +223,6 @@ const SneakerDetailsPage = () => {
         </DetailItem>
       </DetailsContainer>
 
-      {/* Sélectionner la taille */}
       <SizeSelector onChange={(e) => setSelectedSize(e.target.value)} value={selectedSize}>
         <option value="">Sélectionner une taille</option>
         <option value="39">39</option>
@@ -252,7 +234,6 @@ const SneakerDetailsPage = () => {
         <option value="45">45</option>
       </SizeSelector>
 
-      {/* Bouton d'ajout au panier */}
       <Button onClick={handleAddToCart}>Ajouter au panier</Button>
     </Container>
   );
