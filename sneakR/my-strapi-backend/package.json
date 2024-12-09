@@ -4,6 +4,7 @@
   "private": true,
   "description": "A Strapi application",
   "scripts": {
+  
     "build": "strapi build",
     "deploy": "strapi deploy",
     "develop": "strapi develop",
@@ -15,7 +16,9 @@
     "@strapi/plugin-documentation": "^5.5.0",
     "@strapi/plugin-users-permissions": "5.5.0",
     "@strapi/strapi": "5.5.0",
+    "axios": "^1.7.9",
     "better-sqlite3": "11.3.0",
+    "form-data": "^4.0.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.0.0",
