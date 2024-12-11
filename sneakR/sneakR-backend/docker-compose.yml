@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_sneakers
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sneakers_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_sneakers
+    restart: always
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: scraper
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_DATABASE: sneakers_db
+
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: php_api
+    restart: always
+    ports:
+      - "8000:80"
+    depends_on:
+      - db
+
+  react:
+    image: node:18
+    container_name: react_app
+    volumes:
+      - ./frontend:/usr/src/app
+    working_dir: /usr/src/app
+    ports:
+      - "3000:3000"
+    command: ["npm", "start"]
+    networks:
+      - default
+
+volumes:
+  db_data:
