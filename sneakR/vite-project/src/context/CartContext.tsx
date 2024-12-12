@@ -3,11 +3,12 @@ import axios from 'axios';
 
 // Définir l'interface d'un produit dans le panier
 interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  imageUrl: string;
-  size: string;
+  id: number; // ID unique de l'article (lié à la table `cart`)
+  name: string; // Nom du produit
+  price: number; // Prix du produit
+  image_url: string; // URL de l'image du produit
+  size: string; // Taille du produit
+  quantity: number; // Quantité dans le panier
 }
 
 // Définir l'interface du contexte du panier
@@ -15,7 +16,7 @@ interface CartContextType {
   cartItems: CartItem[];
   addToCart: (product: CartItem) => void;
   removeFromCart: (id: number) => void;
-  clearCart: () => void; // Optionnel : une méthode pour vider le panier
+  clearCart: () => void; // Méthode pour vider le panier
 }
 
 // Créer le contexte du panier
@@ -28,32 +29,65 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Fonction pour ajouter un produit au panier via l'API et l'état local
   const addToCart = async (product: CartItem) => {
     try {
-      // On envoie une requête pour ajouter l'élément au panier via l'API
-      await axios.post('http://54.37.12.181:1337/api/cart', product);
+      // Vérifier si le produit existe déjà dans le panier
+      const existingItem = cartItems.find((item) => item.id === product.id);
+      
+      if (existingItem) {
+        // Si l'élément existe déjà, on met à jour la quantité
+        const updatedProduct = { ...existingItem, quantity: existingItem.quantity + product.quantity };
+        
+        // Envoyer une requête pour mettre à jour la quantité au backend (optionnel si l'API le supporte)
+        await axios.put(`http://localhost:3001/api/cart/${product.id}`, updatedProduct);
+        
+        // Mise à jour du panier local
+        setCartItems((prev) =>
+          prev.map((item) => (item.id === product.id ? updatedProduct : item))
+        );
+        console.log('Quantité mise à jour dans le panier.');
+      } else {
+        // Si le produit n'existe pas dans le panier, on l'ajoute
+        const response = await axios.post('http://localhost:3001/api/cart', {
+          user_id: 1, // Modifier si nécessaire pour obtenir dynamiquement l'ID utilisateur
+          product_id: product.id,
+          quantity: product.quantity,
+        });
 
-      // Puis on met à jour le panier localement
-      setCartItems((prev) => [...prev, product]);
+        if (response.status === 201) {
+          setCartItems((prev) => [...prev, product]);
+          console.log('Produit ajouté au panier avec succès !');
+        }
+      }
     } catch (err) {
-      console.error('Erreur lors de l\'ajout au panier :', err);
+      console.error("Erreur lors de l'ajout au panier :", err);
     }
   };
 
   // Fonction pour retirer un produit du panier via l'API et l'état local
   const removeFromCart = async (id: number) => {
     try {
-      // On envoie une requête pour supprimer l'élément du panier via l'API
-      await axios.delete(`http://54.37.12.181:1337/api/cart/${id}`);
-
-      // Puis on met à jour le panier localement
-      setCartItems((prev) => prev.filter((item) => item.id !== id));
+      // On envoie une requête DELETE au backend pour supprimer un produit
+      const response = await axios.delete(`http://localhost:3001/api/cart/${id}`);
+      
+      if (response.status === 200) {
+        // Mettre à jour l'état local après suppression
+        setCartItems((prev) => prev.filter((item) => item.id !== id));
+        console.log("Produit supprimé du panier avec succès !");
+      }
     } catch (err) {
-      console.error('Erreur lors de la suppression du panier :', err);
+      console.error("Erreur lors de la suppression du panier :", err);
     }
   };
 
-  // Optionnel : Fonction pour vider le panier
-  const clearCart = () => {
-    setCartItems([]);  // On vide simplement le panier local
+  // Optionnel : Fonction pour vider le panier via l'API
+  const clearCart = async () => {
+    try {
+      // Si une route pour vider tout le panier existe dans l'API
+      await axios.delete(`http://localhost:3001/api/cart`);
+      setCartItems([]); // On vide localement le panier après succès
+      console.log("Panier vidé avec succès !");
+    } catch (err) {
+      console.error("Erreur lors du vidage du panier :", err);
+    }
   };
 
   // Retourner le contexte avec les valeurs et fonctions nécessaires
@@ -69,7 +103,7 @@ export const useCart = () => {
   const context = useContext(CartContext);
 
   if (!context) {
-    throw new Error('useCart doit être utilisé dans un CartProvider');
+    throw new Error("useCart doit être utilisé dans un CartProvider");
   }
 
   return context;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import axios from 'axios'; // Si vous utilisez Axios pour les appels API
+import axios from 'axios';
 
 const CartContainer = styled.div`
   max-width: 1200px;
@@ -84,7 +84,7 @@ const CartPage = () => {
     try {
       const fetchedItems = await Promise.all(
         cartProductIds.map(async (id) => {
-          const response = await axios.get(`http://54.37.12.181:1337/api/sneakers/${id}`);
+          const response = await axios.get(`http://localhost:3001/api/sneakers/${id}`); // URL API locale
           return response.data;
         })
       );
@@ -99,7 +99,7 @@ const CartPage = () => {
   // Fonction pour retirer un article du panier
   const handleRemoveItem = async (id: number) => {
     try {
-      await axios.delete(`http://54.37.12.181:1337/api/cart/${id}`); // Remplacez par l'URL de l'API pour supprimer un article
+      await axios.delete(`http://localhost:3001/api/cart/${id}`); // URL API locale
       setCartItems(cartItems.filter((item) => item.id !== id)); // Met à jour le panier localement
     } catch (error) {
       setError('Erreur lors de la suppression de l\'article');
@@ -111,8 +111,14 @@ const CartPage = () => {
     fetchCartItems();
   }, []); // Le tableau vide [] signifie que l'effet s'exécute une seule fois après le montage
 
-  // Calcul du total du panier
-  const totalPrice = cartItems.reduce((total, item) => total + item.price, 0);
+  // Calcul du total du panier avec vérification des prix
+  const totalPrice = cartItems.reduce((total, item) => {
+    // Vérification de la validité du prix avant de l'ajouter
+    if (item.price && !isNaN(item.price)) {
+      return total + item.price;
+    }
+    return total;
+  }, 0);
 
   if (loading) {
     return <p>Chargement...</p>;
@@ -134,7 +140,7 @@ const CartPage = () => {
                 <ProductSize><strong>Taille :</strong> {item.selectedSize}</ProductSize> {/* Afficher la taille */}
               </div>
             </ProductDetails>
-            <ProductPrice>{item.price.toFixed(2)} €</ProductPrice>
+            <ProductPrice>{item.price && !isNaN(item.price) ? item.price.toFixed(2) : 'Prix indisponible'} €</ProductPrice>
             <RemoveButton onClick={() => handleRemoveItem(item.id)}>
               Retirer
             </RemoveButton>

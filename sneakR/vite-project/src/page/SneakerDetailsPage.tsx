@@ -10,9 +10,12 @@ interface Sneaker {
   colorway: string;
   estimatedMarketValue: number;
   gender: string;
-  image: {
-    original: string;
-    '360': string[];
+  image_url: string;
+  links: {
+    goat: string;
+    stockX: string;
+    flightClub: string;
+    stadiumGoods: string;
   };
 }
 
@@ -73,7 +76,6 @@ const DetailValue = styled.div`
   font-weight: 400;
 `;
 
-
 const Button = styled.button`
   padding: 10px 20px;
   background-color: #333;
@@ -116,25 +118,25 @@ const SneakerDetailsPage = () => {
   const [sneaker, setSneaker] = useState<Sneaker | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [selectedSize, setSelectedSize] = useState<string>('');
 
   // Récupération des détails de la sneaker depuis l'API
   const fetchSneakerDetails = async () => {
     try {
       const response = await axios.get(
-        `http://54.37.12.181:1337/api/sneakers/${id}`
+        `http://localhost:3001/api/sneakers/${id}`
       );
       const data = response.data;
 
-      if (data && data.data) {
+      if (data) {
         setSneaker({
-          id: data.data.id,
-          brand: data.data.attributes.brand,
-          colorway: data.data.attributes.colorway,
-          estimatedMarketValue: data.data.attributes.estimatedMarketValue,
-          gender: data.data.attributes.gender,
-          image: data.data.attributes.image,
+          id: data.id,
+          brand: data.brand,
+          colorway: data.colorway,
+          estimatedMarketValue: data.estimated_market_value,
+          gender: data.gender,
+          image_url: data.image_url,
+          links: data.links,
         });
       } else {
         throw new Error('Les détails de la sneaker ne sont pas disponibles.');
@@ -155,29 +157,20 @@ const SneakerDetailsPage = () => {
   if (loading) return <LoadingMessage>Chargement...</LoadingMessage>;
   if (error) return <ErrorMessage>{error}</ErrorMessage>;
 
-  // Fonction pour changer l'image en fonction du mouvement de la souris
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (sneaker && sneaker.image['360'].length > 0) {
-      const imageWidth = e.currentTarget.offsetWidth; // Récupère la largeur de l'élément contenant l'image
-      const mouseX = e.nativeEvent.offsetX; // Position horizontale de la souris dans l'élément
-      const index = Math.floor((mouseX / imageWidth) * sneaker.image['360'].length); // Calcul de l'index de l'image
-      setCurrentImageIndex(index); // Met à jour l'index de l'image affichée
-    }
-  };
-
   // Fonction pour ajouter un produit au panier
   const handleAddToCart = () => {
-    if (selectedSize) {
+    if (selectedSize && sneaker) {  // Vérifier que sneaker n'est pas null ou undefined
       const cartItem = {
-        id: sneaker?.id!,
-        name: sneaker?.brand!,
-        price: sneaker?.estimatedMarketValue!,
-        imageUrl: sneaker?.image.original!,
-        size: selectedSize,
+        id: sneaker.id,  // ID du produit
+        name: `${sneaker.brand} - ${sneaker.colorway}`,  // Nom du produit avec la marque et la couleur
+        price: sneaker.estimatedMarketValue,  // Prix du produit
+        image_url: sneaker.image_url,  // URL de l'image (correspond à la clé image_url dans CartItem)
+        size: selectedSize,  // Taille sélectionnée
+        quantity: 1,  // Quantité par défaut
       };
 
-      addToCart(cartItem); // Ajouter l'article au panier via le contexte
-      navigate('/cart'); // Redirection vers la page du panier
+      addToCart(cartItem);  // Ajouter l'article au panier via le contexte
+      navigate('/cart');  // Redirection vers la page du panier
     } else {
       alert('Veuillez sélectionner une taille avant d\'ajouter au panier.');
     }
@@ -189,19 +182,12 @@ const SneakerDetailsPage = () => {
         {sneaker?.brand} - {sneaker?.colorway}
       </Title>
 
-      {/* Section de l'image de la sneaker */}
-      <div
-        onMouseMove={handleMouseMove} // Détection du mouvement de la souris
-        style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}
-      >
-        {sneaker?.image['360'] && sneaker.image['360'].length > 0 ? (
-          <SneakerImage
-            src={sneaker.image['360'][currentImageIndex]} // Image actuelle en fonction du mouvement de la souris
-            alt={sneaker?.brand}
-          />
-        ) : (
-          <SneakerImage src={sneaker?.image.original} alt={sneaker?.brand} />
-        )}
+      {/* Affichage de l'image de la sneaker */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+        <SneakerImage
+          src={sneaker?.image_url}
+          alt={sneaker?.brand}
+        />
       </div>
 
       <DetailsContainer>
