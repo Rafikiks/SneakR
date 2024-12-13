@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Pour envoyer des requêtes HTTP
 
-import GoogleLogo from '../assets/google-logo.png';
-import FacebookLogo from '../assets/facebook-logo.png';
-import AppleLogo from '../assets/apple-logo.png';
-import XLogo from '../assets/x-logo.png';
-import Logo from '../assets/logo.png'; 
+import Logo from '../assets/logo.png'; // Ton logo
 
 const LoginPageContainer = styled.div`
   max-width: 1200px;
@@ -14,7 +11,7 @@ const LoginPageContainer = styled.div`
   padding: 20px;
   background-color: #f9f9f9;
   position: relative;
-  padding-top: 100px; /* Décale le contenu du haut */
+  padding-top: 100px;
 `;
 
 const LogoBandContainer = styled.div`
@@ -32,7 +29,7 @@ const LogoBandContainer = styled.div`
 `;
 
 const LogoImage = styled.img`
-  height: 80px; 
+  height: 80px;
   cursor: pointer;
   transition: transform 0.3s ease;
 
@@ -41,32 +38,29 @@ const LogoImage = styled.img`
   }
 `;
 
-
 const FormContainer = styled.form`
   display: flex;
   flex-direction: column;
   gap: 15px;
-  max-width: 350px; /* Largeur max du formulaire */
+  max-width: 350px;
   width: 100%;
-  aspect-ratio: 1; /* Force une forme carrée */
-  margin: 100px auto 20px auto; /* Décale le formulaire vers le bas */
+  aspect-ratio: 1;
+  margin: 100px auto 20px auto;
   background-color: #fff;
   padding: 30px;
   border-radius: 10px;
-  box-shadow: none; /* Retirer l'ombre */
-  border: none; /* Retirer la bordure */
+  box-shadow: none;
+  border: none;
   transition: all 0.3s ease;
 `;
 
-// Titre du formulaire Log In
 const FormTitle = styled.h2`
   font-size: 1.5rem;
   text-align: center;
   color: #000;
-  margin-bottom: 30px; /* Espacement sous le titre */
+  margin-bottom: 30px;
 `;
 
-// Champ du formulaire
 const InputField = styled.input`
   padding: 12px;
   font-size: 1rem;
@@ -81,7 +75,6 @@ const InputField = styled.input`
   }
 `;
 
-// Bouton de soumission
 const SubmitButton = styled.button`
   padding: 12px;
   font-size: 1rem;
@@ -97,7 +90,6 @@ const SubmitButton = styled.button`
   }
 `;
 
-// Conteneur des boutons de connexion sociale (réseaux sociaux) et du lien "Inscrivez-vous ?"
 const SocialLoginContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -107,7 +99,6 @@ const SocialLoginContainer = styled.div`
   align-items: center;
 `;
 
-// Conteneur horizontal pour les boutons de connexion sociale et le lien d'inscription
 const SocialAndSignupContainer = styled.div`
   display: flex;
   justify-content: space-between;
@@ -116,34 +107,9 @@ const SocialAndSignupContainer = styled.div`
   width: 100%;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap; /* Permet d'adapter les éléments sur mobile */
+  flex-wrap: wrap;
 `;
 
-// Bouton de connexion sociale
-const SocialButton = styled.button`
-  padding: 8px;
-  font-size: 1rem;
-  color: black;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #f2f2f2;
-  }
-
-  img {
-    height: 24px; /* Réduire la taille des icônes */
-  }
-`;
-
-// Lien vers la page d'inscription ou autre
 const StyledLink = styled(Link)`
   text-align: center;
   font-size: 1rem;
@@ -158,16 +124,33 @@ const StyledLink = styled(Link)`
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Email:', email);
-    console.log('Password:', password);
+
+    // Clear previous errors
+    setError('');
+
+    try {
+      const response = await axios.post('http://localhost:3001/api/login', { email, password });
+      
+      if (response.data.token) {
+        // Sauvegarder le token JWT dans le localStorage
+        localStorage.setItem('token', response.data.token);
+
+        // Rediriger l'utilisateur vers la page d'accueil ou une autre page
+        navigate('/');
+      }
+    } catch (error: any) {
+      // Si une erreur survient, afficher l'erreur dans l'état
+      setError(error.response ? error.response.data.message : 'Une erreur est survenue.');
+    }
   };
 
   return (
     <LoginPageContainer>
-      {/* Bandelète avec logo cliquable */}
       <LogoBandContainer>
         <Link to="/">
           <LogoImage src={Logo} alt="Logo" />
@@ -175,8 +158,9 @@ const LoginPage = () => {
       </LogoBandContainer>
 
       <FormContainer onSubmit={handleSubmit}>
-        {/* Titre du formulaire */}
         <FormTitle>Log In</FormTitle>
+
+        {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '10px' }}>{error}</div>}
 
         <InputField
           type="email"
@@ -193,25 +177,11 @@ const LoginPage = () => {
         <SubmitButton type="submit">Se connecter</SubmitButton>
       </FormContainer>
 
-      {/* Connexion sociale et inscription */}
       <SocialLoginContainer>
         <SocialAndSignupContainer>
-          {/* Boutons de réseaux sociaux */}
-          <SocialButton>
-            <img src={GoogleLogo} alt="Google" />
-          </SocialButton>
-          <SocialButton>
-            <img src={AppleLogo} alt="Apple" />
-          </SocialButton>
-          <SocialButton>
-            <img src={FacebookLogo} alt="Facebook" />
-          </SocialButton>
-          <SocialButton>
-            <img src={XLogo} alt="X" />
-          </SocialButton>
+          {/* Pas de boutons réseaux sociaux pour cette version */}
         </SocialAndSignupContainer>
 
-        {/* Lien vers la page d'inscription */}
         <StyledLink to="/register">Pas de compte ? Inscrivez-vous</StyledLink>
       </SocialLoginContainer>
     </LoginPageContainer>

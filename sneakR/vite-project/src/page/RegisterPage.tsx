@@ -1,67 +1,27 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
-import GoogleLogo from '../assets/google-logo.png';
-import FacebookLogo from '../assets/facebook-logo.png';
-import AppleLogo from '../assets/apple-logo.png';
-import XLogo from '../assets/x-logo.png';
-import Logo from '../assets/logo.png';
-
+// Styled Components
 const RegisterPageContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
   background-color: #f9f9f9;
   position: relative;
-  padding-top: 100px; /* Décale le contenu du haut */
-`;
-
-const LogoBandContainer = styled.div`
-  background-color: #fff;
-  width: 100%;
-  padding: 20px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-  transition: background-color 0.3s ease;
-`;
-
-const LogoImage = styled.img`
-  height: 80px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-
-  &:hover {
-    transform: scale(1.1);
-  }
+  padding-top: 100px;
 `;
 
 const FormContainer = styled.form`
   display: flex;
   flex-direction: column;
   gap: 15px;
-  max-width: 350px; /* Largeur max du formulaire */
-  width: 100%;
-  aspect-ratio: 1; /* Force une forme carrée */
-  margin: 100px auto 20px auto; /* Décale le formulaire vers le bas */
+  max-width: 350px;
+  margin: 100px auto;
   background-color: #fff;
   padding: 30px;
   border-radius: 10px;
-  box-shadow: none; /* Retirer l'ombre */
-  border: none; /* Retirer la bordure */
-  transition: all 0.3s ease;
-`;
-
-const FormTitle = styled.h2`
-  font-size: 1.5rem;
-  text-align: center;
-  color: #000;
-  margin-bottom: 30px; /* Espacement sous le titre */
 `;
 
 const InputField = styled.input`
@@ -71,11 +31,6 @@ const InputField = styled.input`
   border-radius: 8px;
   background-color: #fff;
   color: #333;
-  transition: border-color 0.3s ease;
-
-  &:focus {
-    border-color: #000;
-  }
 `;
 
 const SubmitButton = styled.button`
@@ -93,49 +48,6 @@ const SubmitButton = styled.button`
   }
 `;
 
-const SocialLoginContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 10px;
-  justify-content: center;
-  align-items: center;
-`;
-
-const SocialAndSignupContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  margin-top: 10px;
-  width: 100%;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-`;
-
-const SocialButton = styled.button`
-  padding: 8px;
-  font-size: 1rem;
-  color: black;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #f2f2f2;
-  }
-
-  img {
-    height: 24px; /* Réduire la taille des icônes */
-  }
-`;
-
 const StyledLink = styled(Link)`
   text-align: center;
   font-size: 1rem;
@@ -148,12 +60,15 @@ const StyledLink = styled(Link)`
 `;
 
 const RegisterPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [username, setUsername] = useState('');
+  // Déclaration des états
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
+  const [message, setMessage] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fonction de soumission du formulaire
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {  // Typage de l'événement
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -161,22 +76,22 @@ const RegisterPage = () => {
       return;
     }
 
-    console.log('Email:', email);
-    console.log('Username:', username);
-    console.log('Password:', password);
+    try {
+      const response = await axios.post('http://localhost:3001/api/register', {
+        email,
+        password,
+        username,
+      });
+      setMessage(response.data.message);  // Message du backend
+    } catch (error: any) {  // Typage de l'erreur
+      setMessage(error.response ? error.response.data.message : 'Erreur serveur');
+    }
   };
 
   return (
     <RegisterPageContainer>
-      {/* Bandeau avec le logo */}
-      <LogoBandContainer>
-        <Link to="/">
-          <LogoImage src={Logo} alt="Logo" />
-        </Link>
-      </LogoBandContainer>
-
       <FormContainer onSubmit={handleSubmit}>
-        <FormTitle>Inscription</FormTitle>
+        <h2>Inscription</h2>
 
         <InputField
           type="text"
@@ -205,25 +120,9 @@ const RegisterPage = () => {
         <SubmitButton type="submit">S'inscrire</SubmitButton>
       </FormContainer>
 
-      <SocialLoginContainer>
-        <SocialAndSignupContainer>
-          <SocialButton>
-            <img src={GoogleLogo} alt="Google" />
-          </SocialButton>
-          <SocialButton>
-            <img src={AppleLogo} alt="Apple" />
-          </SocialButton>
-          <SocialButton>
-            <img src={FacebookLogo} alt="Facebook" />
-          </SocialButton>
-          <SocialButton>
-            <img src={XLogo} alt="X" />
-          </SocialButton>
-        </SocialAndSignupContainer>
+      {message && <p>{message}</p>}  {/* Affiche le message d'erreur ou de succès */}
 
-        {/* Lien vers la page de connexion */}
-        <StyledLink to="/login">Déjà un compte ? Connectez-vous</StyledLink>
-      </SocialLoginContainer>
+      <StyledLink to="/login">Déjà un compte ? Connectez-vous</StyledLink>
     </RegisterPageContainer>
   );
 };
