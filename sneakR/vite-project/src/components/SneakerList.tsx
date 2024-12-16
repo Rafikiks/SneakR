@@ -9,14 +9,8 @@ interface Sneaker {
   brand: string;
   colorway: string;
   estimated_market_value: number;
-  gender: string; // Ajout du champ gender
+  gender: string;
   image_url: string;
-  links: {
-    stockX: string;
-    goat: string;
-    flightClub: string;
-    stadiumGoods: string;
-  };
 }
 
 // Styled Components
@@ -31,54 +25,87 @@ const SneakerListContainer = styled.div`
 
 const SneakerCard = styled.div`
   background-color: white;
-  width: 250px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  border-radius: 12px;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   text-align: center;
-  padding: 15px;
-  transition: transform 0.3s ease;
+  padding: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-10px);
+    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.1);
   }
 `;
 
 const SneakerImage = styled.img`
   width: 100%;
   height: auto;
-  object-fit: contain;
-  border-radius: 8px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 15px;
 `;
 
 const SneakerDetails = styled.div`
   margin-top: 15px;
+  padding: 10px;
 `;
 
 const SneakerTitle = styled.h3`
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   color: #333;
+  font-weight: 700;
+  margin-bottom: 8px;
+`;
+
+const SneakerPrice = styled.div`
+  font-size: 1.1rem;
+  color: #555;
   font-weight: 600;
   margin-bottom: 10px;
 `;
 
-const SneakerPrice = styled.div`
-  font-size: 1rem;
-  color: #888;
-  font-weight: 500;
-`;
-
 const SneakerGender = styled.div`
   font-size: 0.9rem;
-  color: #555;
+  color: #777;
   margin-top: 5px;
+  text-transform: capitalize;
 `;
 
-const LinkContainer = styled.div`
-  margin-top: 10px;
+const PaginationContainer = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+`;
+
+const PaginationButton = styled.button<{ isActive?: boolean }>`
+  background-color: ${(props) => (props.isActive ? "#333" : "#fff")};
+  color: ${(props) => (props.isActive ? "#fff" : "#333")};
+  border: 1px solid #333;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+
+  &:hover {
+    background-color: #333;
+    color: #fff;
+  }
+
+  &:disabled {
+    background-color: #ddd;
+    color: #999;
+    cursor: not-allowed;
+  }
+`;
+
+// Supprimer le soulignement bleu des liens
+const StyledLink = styled(Link)`
+  text-decoration: none; /* Enlève le soulignement bleu par défaut */
+  color: inherit; /* Assure que le lien hérite de la couleur de son parent */
 `;
 
 const SneakerListPage = () => {
@@ -86,29 +113,37 @@ const SneakerListPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Nombre d'items à afficher (une seule page de 25 sneakers)
-  const itemsPerPage = 25;
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1); // Page actuelle
+  const itemsPerPage = 15; // Nombre d'items par page
+  const [totalPages, setTotalPages] = useState<number>(1); // Total des pages
 
   // Fonction pour récupérer les sneakers
-  const fetchSneakers = async () => {
+  const fetchSneakers = async (page: number) => {
     try {
-      const response = await axios.get("http://localhost:3001/api/sneakers");
+      const response = await axios.get(`http://localhost:3001/api/sneakers`);
       const data = response.data;
 
-      // Vérifier la structure des données
       if (Array.isArray(data)) {
-        // Limiter les sneakers à un maximum de 25
-        const limitedSneakers = data.slice(0, itemsPerPage);
-        
+        const totalSneakers = data.length;
+        const totalPages = Math.ceil(totalSneakers / itemsPerPage); // Calculer le nombre total de pages
+
+        setTotalPages(totalPages);
+
+        // Calculer les indices pour récupérer les données de la page courante
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+
+        const sneakersToShow = data.slice(startIndex, endIndex);
+
         setSneakers(
-          limitedSneakers.map((item: any) => ({
+          sneakersToShow.map((item: any) => ({
             id: item.id,
             brand: item.brand || "Inconnu",
             colorway: item.colorway || "Inconnu",
             estimated_market_value: item.estimated_market_value || 0,
-            gender: item.gender || "Non spécifié", // Ajout du genre
-            image_url: item.image_url && item.image_url.length > 0 ? item.image_url : "default-image-url.jpg", // Image par défaut si vide
-            links: item.links || {},
+            gender: item.gender || "Non spécifié",
+            image_url: item.image_url || "default-image-url.jpg",
           }))
         );
       } else {
@@ -122,10 +157,19 @@ const SneakerListPage = () => {
     }
   };
 
-  // Chargement des sneakers au montage du composant
+  // Fonction appelée pour changer de page
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      setLoading(true);
+      fetchSneakers(newPage);
+    }
+  };
+
+  // Charger les sneakers au montage du composant
   useEffect(() => {
-    fetchSneakers();
-  }, []);
+    fetchSneakers(currentPage);
+  }, [currentPage]);
 
   if (loading) return <div>Chargement...</div>;
   if (error) return <div>{error}</div>;
@@ -135,12 +179,12 @@ const SneakerListPage = () => {
       <SneakerListContainer>
         {sneakers.map((sneaker) => (
           <SneakerCard key={sneaker.id}>
-            <Link to={`/sneakers/${sneaker.id}`}>
+            <StyledLink to={`/sneakers/${sneaker.id}`}>
               <SneakerImage
                 src={sneaker.image_url}
                 alt={sneaker.brand}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "default-image-url.jpg"; // Image par défaut en cas d'erreur
+                  (e.target as HTMLImageElement).src = "default-image-url.jpg";
                 }}
               />
               <SneakerDetails>
@@ -148,36 +192,28 @@ const SneakerListPage = () => {
                   {sneaker.brand} - {sneaker.colorway}
                 </SneakerTitle>
                 <SneakerPrice>{sneaker.estimated_market_value} €</SneakerPrice>
-                <SneakerGender>{sneaker.gender}</SneakerGender> {/* Affichage du genre */}
+                <SneakerGender>{sneaker.gender}</SneakerGender>
               </SneakerDetails>
-            </Link>
-
-            {/* Liens vers d'autres plateformes */}
-            <LinkContainer>
-              {sneaker.links.goat && (
-                <a href={sneaker.links.goat} target="_blank" rel="noopener noreferrer">
-                  Goat
-                </a>
-              )}
-              {sneaker.links.stockX && (
-                <a href={sneaker.links.stockX} target="_blank" rel="noopener noreferrer">
-                  StockX
-                </a>
-              )}
-              {sneaker.links.flightClub && (
-                <a href={sneaker.links.flightClub} target="_blank" rel="noopener noreferrer">
-                  FlightClub
-                </a>
-              )}
-              {sneaker.links.stadiumGoods && (
-                <a href={sneaker.links.stadiumGoods} target="_blank" rel="noopener noreferrer">
-                  Stadium Goods
-                </a>
-              )}
-            </LinkContainer>
+            </StyledLink>
           </SneakerCard>
         ))}
       </SneakerListContainer>
+
+      {/* Pagination */}
+      <PaginationContainer>
+        <PaginationButton
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          Précédent
+        </PaginationButton>
+        <PaginationButton
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          Suivant
+        </PaginationButton>
+      </PaginationContainer>
     </>
   );
 };

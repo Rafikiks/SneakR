@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaHome, FaSignInAlt, FaShoppingCart } from 'react-icons/fa'; // Ajout de l'icône du panier
+import { FaHome, FaSignInAlt, FaRegHeart } from 'react-icons/fa';
 import Logo from '../assets/logo.png'; // Assurez-vous que le chemin est correct
+import SearchBar from './SearchBar';  // Importation de la SearchBar
 
 // Styles pour le conteneur principal de la Navbar
 const NavbarContainer = styled.nav`
@@ -47,6 +48,14 @@ const StyledLink = styled(Link)`
   }
 `;
 
+// Style pour le conteneur de la barre de recherche
+const SearchContainer = styled.div`
+  flex-grow: 1; /* Permet à la SearchBar d'occuper tout l'espace restant */
+  display: flex;
+  justify-content: center; /* Centre la barre de recherche */
+`;
+
+// Composant Navbar avec la barre de recherche incluse
 const Navbar = () => {
   return (
     <NavbarContainer>
@@ -54,6 +63,11 @@ const Navbar = () => {
       <LogoContainer to="/sneakers">
         <LogoImage src={Logo} alt="SneakR Logo" />
       </LogoContainer>
+
+      {/* Conteneur de la barre de recherche */}
+      <SearchContainer>
+        <SearchBar />
+      </SearchContainer>
 
       {/* Liens de navigation */}
       <LinksContainer>
@@ -65,9 +79,9 @@ const Navbar = () => {
           <FaSignInAlt /> {/* Icône de connexion */}
           Connexion
         </StyledLink>
-        <StyledLink to="/cart">
-          <FaShoppingCart /> {/* Icône du panier */}
-          Panier
+        <StyledLink to="/wishlist">
+          <FaRegHeart /> {/* Icône de wishlist */}
+          Wishlist
         </StyledLink>
       </LinksContainer>
     </NavbarContainer>

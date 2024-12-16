@@ -36,8 +36,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         // Si l'élément existe déjà, on met à jour la quantité
         const updatedProduct = { ...existingItem, quantity: existingItem.quantity + product.quantity };
         
-        // Envoyer une requête pour mettre à jour la quantité au backend (optionnel si l'API le supporte)
-        await axios.put(`http://localhost:3001/api/cart/${product.id}`, updatedProduct);
+        // Envoyer une requête pour mettre à jour la quantité au backend
+        const userId = 1; // Remplace par l'ID de l'utilisateur réel
+        await axios.put(`http://localhost:3001/api/cart/${userId}/${product.id}`, updatedProduct);
         
         // Mise à jour du panier local
         setCartItems((prev) =>
@@ -46,9 +47,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         console.log('Quantité mise à jour dans le panier.');
       } else {
         // Si le produit n'existe pas dans le panier, on l'ajoute
+        const userId = 1; // Remplace par l'ID de l'utilisateur réel
         const response = await axios.post('http://localhost:3001/api/cart', {
-          user_id: 1, // Modifier si nécessaire pour obtenir dynamiquement l'ID utilisateur
-          product_id: product.id,
+          user_id: userId,
+          sneaker_id: product.id,
           quantity: product.quantity,
         });
 
@@ -65,8 +67,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Fonction pour retirer un produit du panier via l'API et l'état local
   const removeFromCart = async (id: number) => {
     try {
+      const userId = 1; // Remplace par l'ID de l'utilisateur réel
       // On envoie une requête DELETE au backend pour supprimer un produit
-      const response = await axios.delete(`http://localhost:3001/api/cart/${id}`);
+      const response = await axios.delete(`http://localhost:3001/api/cart/${userId}/${id}`);
       
       if (response.status === 200) {
         // Mettre à jour l'état local après suppression
@@ -81,8 +84,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Optionnel : Fonction pour vider le panier via l'API
   const clearCart = async () => {
     try {
+      const userId = 1; // Remplace par l'ID de l'utilisateur réel
       // Si une route pour vider tout le panier existe dans l'API
-      await axios.delete(`http://localhost:3001/api/cart`);
+      await axios.delete(`http://localhost:3001/api/cart/${userId}`);
       setCartItems([]); // On vide localement le panier après succès
       console.log("Panier vidé avec succès !");
     } catch (err) {

@@ -5,6 +5,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
+// Vérification des variables d'environnement obligatoires
+if (!process.env.JWT_SECRET) {
+  console.error('Erreur : JWT_SECRET n\'est pas défini dans le fichier .env');
+  process.exit(1);
+}
+
 // Créer une instance de l'application Express
 const app = express();
 
@@ -36,18 +42,78 @@ db.connect((err) => {
   console.log('Connexion réussie à la base de données MySQL');
 });
 
+// Middleware d'authentification
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Récupération du token
+
+  if (!token) return res.status(401).json({ message: 'Accès non autorisé.' });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: 'Token invalide.' });
+    req.user = user;
+    next();
+  });
+};
+
+// --- ROUTES ---
+
 // Route pour récupérer tous les sneakers
 app.get('/api/sneakers', (req, res) => {
-  const query = 'SELECT * FROM sneakers'; // La requête SQL pour récupérer tous les sneakers
+  const query = 'SELECT * FROM sneakers';
 
   db.query(query, (err, results) => {
     if (err) {
       console.error('Erreur lors de la récupération des sneakers:', err);
-      return res
-        .status(500)
-        .json({ message: 'Erreur serveur lors de la récupération des sneakers.' });
+      return res.status(500).json({ message: 'Erreur serveur lors de la récupération des sneakers.' });
     }
-    res.status(200).json(results); // Retourner les sneakers sous forme de JSON
+    res.status(200).json(results);
+  });
+});
+
+// Route pour récupérer les détails d'un sneaker par son ID
+app.get('/api/sneakers/:id', (req, res) => {
+  const sneakerId = parseInt(req.params.id, 10);
+
+  if (isNaN(sneakerId)) {
+    return res.status(400).json({ message: 'ID du sneaker invalide.' });
+  }
+
+  const query = 'SELECT * FROM sneakers WHERE id = ?';
+  db.query(query, [sneakerId], (err, results) => {
+    if (err) {
+      console.error('Erreur lors de la récupération des détails du sneaker:', err);
+      return res.status(500).json({ message: 'Erreur serveur lors de la récupération du sneaker.' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Sneaker non trouvé.' });
+    }
+
+    res.status(200).json(results[0]);
+  });
+});
+
+// Route pour rechercher des sneakers en fonction de la marque, couleur ou modèle
+app.get('/api/sneakers/search', (req, res) => {
+  const { query } = req.query; // "query" est le paramètre de recherche dans la requête GET
+
+  if (!query) {
+    return res.status(400).json({ message: 'Le paramètre de recherche est requis.' });
+  }
+
+  const searchQuery = `
+    SELECT * FROM sneakers
+    WHERE brand LIKE ? OR color LIKE ? OR model LIKE ?
+  `;
+
+  db.query(searchQuery, [`%${query}%`, `%${query}%`, `%${query}%`], (err, results) => {
+    if (err) {
+      console.error('Erreur lors de la recherche des sneakers:', err);
+      return res.status(500).json({ message: 'Erreur serveur lors de la recherche.' });
+    }
+
+    res.status(200).json(results);
   });
 });
 
@@ -55,13 +121,11 @@ app.get('/api/sneakers', (req, res) => {
 app.post('/api/register', async (req, res) => {
   const { email, password, username } = req.body;
 
-  // Vérification des données reçues
   if (!email || !password || !username) {
     return res.status(400).json({ message: 'Tous les champs sont requis.' });
   }
 
   try {
-    // Vérifier si l'utilisateur existe déjà
     const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
     db.query(checkUserQuery, [email], async (err, results) => {
       if (err) {
@@ -73,12 +137,9 @@ app.post('/api/register', async (req, res) => {
         return res.status(400).json({ message: 'Cet email est déjà utilisé.' });
       }
 
-      // Hachage du mot de passe
       const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Insérer l'utilisateur dans la base de données
       const insertUserQuery = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-      db.query(insertUserQuery, [username, email, hashedPassword], (err, results) => {
+      db.query(insertUserQuery, [username, email, hashedPassword], (err) => {
         if (err) {
           console.error('Erreur lors de l\'insertion de l\'utilisateur:', err);
           return res.status(500).json({ message: 'Erreur serveur lors de l\'inscription.' });
@@ -113,17 +174,43 @@ app.post('/api/login', (req, res) => {
     }
 
     const user = results[0];
-
-    // Vérifier si le mot de passe est correct
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({ message: 'Mot de passe incorrect.' });
     }
 
-    // Créer un token JWT
     const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({ message: 'Connexion réussie.', token });
+  });
+});
+
+// Route sécurisée pour la wishlist
+app.get('/api/wishlist', authenticateToken, (req, res) => {
+  const query = `
+    SELECT sneakers.* 
+    FROM wishlist 
+    JOIN sneakers ON wishlist.sneaker_id = sneakers.id 
+    WHERE wishlist.user_id = ?
+  `;
+  db.query(query, [req.user.userId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Erreur lors de la récupération.' });
+    res.status(200).json(results);
+  });
+});
+
+// Route d'ajout à la wishlist
+app.post('/api/wishlist', authenticateToken, (req, res) => {
+  const { sneakerId } = req.body;
+
+  if (!sneakerId) {
+    return res.status(400).json({ message: 'ID du sneaker requis.' });
+  }
+
+  const insertQuery = 'INSERT INTO wishlist (user_id, sneaker_id) VALUES (?, ?)';
+  db.query(insertQuery, [req.user.userId, sneakerId], (err) => {
+    if (err) return res.status(500).json({ message: 'Erreur lors de l\'ajout.' });
+    res.status(201).json({ message: 'Ajouté à la wishlist avec succès.' });
   });
 });
 
