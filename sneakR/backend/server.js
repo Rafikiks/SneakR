@@ -51,6 +51,48 @@ app.get('/api/sneakers', (req, res) => {
   });
 });
 
+// Route pour enregistrer un nouvel utilisateur
+app.post('/api/register', async (req, res) => {
+  const { email, password, username } = req.body;
+
+  // Vérification des données reçues
+  if (!email || !password || !username) {
+    return res.status(400).json({ message: 'Tous les champs sont requis.' });
+  }
+
+  try {
+    // Vérifier si l'utilisateur existe déjà
+    const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
+    db.query(checkUserQuery, [email], async (err, results) => {
+      if (err) {
+        console.error('Erreur lors de la vérification de l\'utilisateur:', err);
+        return res.status(500).json({ message: 'Erreur serveur.' });
+      }
+
+      if (results.length > 0) {
+        return res.status(400).json({ message: 'Cet email est déjà utilisé.' });
+      }
+
+      // Hachage du mot de passe
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insérer l'utilisateur dans la base de données
+      const insertUserQuery = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
+      db.query(insertUserQuery, [username, email, hashedPassword], (err, results) => {
+        if (err) {
+          console.error('Erreur lors de l\'insertion de l\'utilisateur:', err);
+          return res.status(500).json({ message: 'Erreur serveur lors de l\'inscription.' });
+        }
+
+        res.status(201).json({ message: 'Utilisateur créé avec succès.' });
+      });
+    });
+  } catch (error) {
+    console.error('Erreur lors de l\'inscription:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 // Route pour la connexion des utilisateurs
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;

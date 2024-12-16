@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Pour envoyer des requêtes HTTP
+import axios from 'axios';
 
-import Logo from '../assets/logo.png'; // Ton logo
+import Logo from '../assets/logo.png';
 
 const LoginPageContainer = styled.div`
   max-width: 1200px;
@@ -127,24 +127,27 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    if (!email || !password) {
+      setError('Veuillez remplir tous les champs');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Clear previous errors
-    setError('');
+    if (!validateForm()) return;
 
     try {
       const response = await axios.post('http://localhost:3001/api/login', { email, password });
       
       if (response.data.token) {
-        // Sauvegarder le token JWT dans le localStorage
         localStorage.setItem('token', response.data.token);
-
-        // Rediriger l'utilisateur vers la page d'accueil ou une autre page
         navigate('/');
       }
     } catch (error: any) {
-      // Si une erreur survient, afficher l'erreur dans l'état
       setError(error.response ? error.response.data.message : 'Une erreur est survenue.');
     }
   };
