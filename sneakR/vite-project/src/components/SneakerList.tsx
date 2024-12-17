@@ -3,7 +3,6 @@ import axios from "axios";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 
-// Définir le type des données de la sneaker
 interface Sneaker {
   id: number;
   brand: string;
@@ -13,7 +12,6 @@ interface Sneaker {
   image_url: string;
 }
 
-// Styled Components
 const SneakerListContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -74,82 +72,30 @@ const SneakerGender = styled.div`
   text-transform: capitalize;
 `;
 
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+`;
+
 const PaginationContainer = styled.div`
   display: flex;
   justify-content: center;
-  gap: 20px;
   margin-top: 20px;
-`;
-
-const PaginationButton = styled.button<{ isActive?: boolean }>`
-  background-color: ${(props) => (props.isActive ? "#333" : "#fff")};
-  color: ${(props) => (props.isActive ? "#fff" : "#333")};
-  border: 1px solid #333;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 600;
-
-  &:hover {
-    background-color: #333;
-    color: #fff;
-  }
-
-  &:disabled {
-    background-color: #ddd;
-    color: #999;
-    cursor: not-allowed;
-  }
-`;
-
-// Supprimer le soulignement bleu des liens
-const StyledLink = styled(Link)`
-  text-decoration: none; /* Enlève le soulignement bleu par défaut */
-  color: inherit; /* Assure que le lien hérite de la couleur de son parent */
+  gap: 10px;
 `;
 
 const SneakerListPage = () => {
   const [sneakers, setSneakers] = useState<Sneaker[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [sneakersPerPage] = useState<number>(15); // Nombre d'éléments par page
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState<number>(1); // Page actuelle
-  const itemsPerPage = 15; // Nombre d'items par page
-  const [totalPages, setTotalPages] = useState<number>(1); // Total des pages
-
-  // Fonction pour récupérer les sneakers
-  const fetchSneakers = async (page: number) => {
+  // Fonction pour récupérer toutes les sneakers
+  const fetchAllSneakers = async () => {
     try {
-      const response = await axios.get(`http://localhost:3001/api/sneakers`);
-      const data = response.data;
-
-      if (Array.isArray(data)) {
-        const totalSneakers = data.length;
-        const totalPages = Math.ceil(totalSneakers / itemsPerPage); // Calculer le nombre total de pages
-
-        setTotalPages(totalPages);
-
-        // Calculer les indices pour récupérer les données de la page courante
-        const startIndex = (page - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-
-        const sneakersToShow = data.slice(startIndex, endIndex);
-
-        setSneakers(
-          sneakersToShow.map((item: any) => ({
-            id: item.id,
-            brand: item.brand || "Inconnu",
-            colorway: item.colorway || "Inconnu",
-            estimated_market_value: item.estimated_market_value || 0,
-            gender: item.gender || "Non spécifié",
-            image_url: item.image_url || "default-image-url.jpg",
-          }))
-        );
-      } else {
-        throw new Error("La réponse de l'API est mal formatée.");
-      }
-
+      const response = await axios.get(`http://localhost:3001/api/sneakers/all`);
+      setSneakers(response.data);
       setLoading(false);
     } catch (err) {
       setError("Une erreur est survenue lors du chargement des sneakers.");
@@ -157,27 +103,36 @@ const SneakerListPage = () => {
     }
   };
 
-  // Fonction appelée pour changer de page
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-      setLoading(true);
-      fetchSneakers(newPage);
-    }
-  };
-
-  // Charger les sneakers au montage du composant
+  // Charger toutes les sneakers au montage du composant
   useEffect(() => {
-    fetchSneakers(currentPage);
-  }, [currentPage]);
+    fetchAllSneakers();
+  }, []);
 
   if (loading) return <div>Chargement...</div>;
   if (error) return <div>{error}</div>;
 
+  // Découper la liste des sneakers en pages de 15 éléments
+  const indexOfLastSneaker = currentPage * sneakersPerPage;
+  const indexOfFirstSneaker = indexOfLastSneaker - sneakersPerPage;
+  const currentSneakers = sneakers.slice(indexOfFirstSneaker, indexOfLastSneaker);
+
+  // Fonction pour changer la page
+  const handleNextPage = () => {
+    if (currentPage < Math.ceil(sneakers.length / sneakersPerPage)) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <>
       <SneakerListContainer>
-        {sneakers.map((sneaker) => (
+        {currentSneakers.map((sneaker) => (
           <SneakerCard key={sneaker.id}>
             <StyledLink to={`/sneakers/${sneaker.id}`}>
               <SneakerImage
@@ -199,20 +154,19 @@ const SneakerListPage = () => {
         ))}
       </SneakerListContainer>
 
-      {/* Pagination */}
       <PaginationContainer>
-        <PaginationButton
-          disabled={currentPage === 1}
-          onClick={() => handlePageChange(currentPage - 1)}
-        >
+        <button onClick={handlePrevPage} disabled={currentPage === 1}>
           Précédent
-        </PaginationButton>
-        <PaginationButton
-          disabled={currentPage === totalPages}
-          onClick={() => handlePageChange(currentPage + 1)}
+        </button>
+        <span>
+          Page {currentPage} sur {Math.ceil(sneakers.length / sneakersPerPage)}
+        </span>
+        <button
+          onClick={handleNextPage}
+          disabled={currentPage === Math.ceil(sneakers.length / sneakersPerPage)}
         >
           Suivant
-        </PaginationButton>
+        </button>
       </PaginationContainer>
     </>
   );

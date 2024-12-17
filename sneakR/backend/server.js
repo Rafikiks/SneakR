@@ -99,6 +99,40 @@ app.get('/api/sneakers', (req, res) => {
   });
 });
 
+// Route pour récupérer toutes les sneakers avec pagination
+app.get("/api/sneakers/all", (req, res) => {
+  const page = parseInt(req.query.page) || 1; // Page courante, défaut à 1
+  const limit = 25; // Nombre d'éléments par page
+  const offset = (page - 1) * limit; // Définir l'offset pour la pagination
+
+  const query = "SELECT * FROM sneakers LIMIT ? OFFSET ?";
+
+  // Exécuter la requête SQL pour récupérer toutes les sneakers avec pagination
+  db.query(query, [limit, offset], (err, results) => {
+    if (err) {
+      console.error("Erreur lors de la récupération des sneakers:", err);
+      return res.status(500).json({ message: "Erreur serveur." });
+    }
+
+    // Compter le total des sneakers pour déterminer le nombre total de pages
+    db.query("SELECT COUNT(*) AS total FROM sneakers", (err, countResults) => {
+      if (err) {
+        console.error("Erreur lors du comptage des sneakers:", err);
+        return res.status(500).json({ message: "Erreur serveur." });
+      }
+
+      const totalSneakers = countResults[0].total;
+      const totalPages = Math.ceil(totalSneakers / limit);
+
+      res.status(200).json({
+        sneakers: results,
+        totalPages: totalPages,
+        currentPage: page,
+        totalSneakers: totalSneakers,
+      });
+    });
+  });
+});
 // Route pour récupérer les détails d'un sneaker par ID
 app.get("/api/sneakers/:id", (req, res) => {
   const sneakerId = parseInt(req.params.id, 10);
