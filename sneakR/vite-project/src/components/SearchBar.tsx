@@ -35,7 +35,7 @@ const SearchButton = styled.button`
   padding: 12px 20px;
   font-size: 16px;
   border: none;
-  background-color: #3498db;
+  background-color: #28a745; /* Vert */
   color: white;
   cursor: pointer;
   border-radius: 30px;
@@ -43,7 +43,7 @@ const SearchButton = styled.button`
   transition: background-color 0.3s ease, transform 0.2s ease;
 
   &:hover {
-    background-color: #2980b9;
+    background-color: #218838; /* Vert foncé au survol */
     transform: translateY(-2px);
   }
 

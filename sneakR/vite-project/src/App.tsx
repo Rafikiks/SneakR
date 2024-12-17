@@ -6,39 +6,47 @@ import RegisterPage from "./page/RegisterPage";
 import WishlistPage from "./page/WishlistPage";
 import SneakersList from "./components/SneakerList";
 import SneakerDetailsPage from "./page/SneakerDetailsPage";
-import { CartProvider } from "./context/CartContext";
-import SearchResultsPage from "./page/SearchResults"; // Assurez-vous que cette page existe pour la route
+import { WishlistProvider } from "./context/WishlistContext.tsx"; // Mise à jour du nom pour Wishlist
+import SearchResultsPage from "./page/SearchResults"; // Page pour les résultats de recherche
 
 // Page principale de l'application
 const App = () => {
   return (
     <Router>
-      <CartProvider>
+      {/* Fourniture du contexte Wishlist */}
+      <WishlistProvider>
         <AppRoutes />
-      </CartProvider>
+      </WishlistProvider>
     </Router>
   );
 };
 
+// Composant pour les routes et la logique d'affichage conditionnel de la Navbar
 const AppRoutes = () => {
   const location = useLocation();
-  const isLoginOrRegisterPage = location.pathname === "/login" || location.pathname === "/register";
+
+  // Masquer la Navbar sur les pages Login et Register
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
   return (
     <>
-      {/* Afficher la Navbar sauf sur les pages de connexion ou d'inscription */}
-      {!isLoginOrRegisterPage && <Navbar />}
+      {/* Affiche la Navbar sauf sur les pages de connexion et d'inscription */}
+      {!isAuthPage && <Navbar />}
 
+      {/* Déclaration des routes */}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/sneakers" element={<SneakersList />} />
+        <Route path="/sneakers/:id" element={<SneakerDetailsPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/search-results" element={<SearchResultsPage />} />
+
+        {/* Routes pour l'authentification */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/wishlist" element={<WishlistPage />} />
-        <Route path="/sneakers/:id" element={<SneakerDetailsPage />} />
 
-        {/* Route pour afficher les résultats de la recherche */}
-        <Route path="/search-results" element={<SearchResultsPage />} />
+        {/* Gestion des routes non trouvées */}
+        <Route path="*" element={<h2>Page non trouvée</h2>} />
       </Routes>
     </>
   );

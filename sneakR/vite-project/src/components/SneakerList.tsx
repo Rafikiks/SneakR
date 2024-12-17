@@ -81,7 +81,40 @@ const PaginationContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 20px;
-  gap: 10px;
+  gap: 20px;
+  align-items: center;
+`;
+
+const PaginationButton = styled.button`
+  background-color: #28a745;  /* Vert clair */
+  color: white;
+  font-size: 1rem;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+
+  &:hover {
+    background-color: #218838;  /* Vert foncé au survol */
+    transform: translateY(-3px);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  &:focus {
+    outline: none;
+  }
+`;
+
+const PageNumber = styled.span`
+  font-family: 'Roboto', sans-serif;  /* Appliquer la police Roboto */
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
 `;
 
 const SneakerListPage = () => {
@@ -155,18 +188,18 @@ const SneakerListPage = () => {
       </SneakerListContainer>
 
       <PaginationContainer>
-        <button onClick={handlePrevPage} disabled={currentPage === 1}>
+        <PaginationButton onClick={handlePrevPage} disabled={currentPage === 1}>
           Précédent
-        </button>
-        <span>
+        </PaginationButton>
+        <PageNumber>
           Page {currentPage} sur {Math.ceil(sneakers.length / sneakersPerPage)}
-        </span>
-        <button
+        </PageNumber>
+        <PaginationButton
           onClick={handleNextPage}
           disabled={currentPage === Math.ceil(sneakers.length / sneakersPerPage)}
         >
           Suivant
-        </button>
+        </PaginationButton>
       </PaginationContainer>
     </>
   );

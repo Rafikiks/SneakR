@@ -211,7 +211,71 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-// --- DEMARRAGE DU SERVEUR ---
+// --- ROUTES WISHLIST ---
+
+// Route pour récupérer la wishlist d'un utilisateur
+app.get("/api/wishlist/:id", authenticateToken, (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+
+  if (isNaN(userId)) {
+    return res.status(400).json({ message: "ID utilisateur invalide." });
+  }
+
+  const query = `
+    SELECT s.* 
+    FROM wishlist w 
+    JOIN sneakers s ON w.sneaker_id = s.id 
+    WHERE w.user_id = ?`;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Erreur lors de la récupération de la wishlist :", err);
+      return res.status(500).json({ message: "Erreur serveur." });
+    }
+
+    res.status(200).json({ wishlist: results });
+  });
+});
+
+// Route pour ajouter un sneaker à la wishlist
+app.post("/api/wishlist", authenticateToken, (req, res) => {
+  const { userId, sneakerId } = req.body;
+
+  if (!userId || !sneakerId) {
+    return res.status(400).json({ message: "L'ID utilisateur et l'ID du sneaker sont requis." });
+  }
+
+  const query = "INSERT INTO wishlist (user_id, sneaker_id) VALUES (?, ?)";
+  db.query(query, [userId, sneakerId], (err) => {
+    if (err) {
+      console.error("Erreur lors de l'ajout à la wishlist :", err);
+      return res.status(500).json({ message: "Erreur serveur." });
+    }
+
+    res.status(201).json({ message: "Sneaker ajouté à la wishlist." });
+  });
+});
+
+// Route pour supprimer un sneaker de la wishlist
+app.delete("/api/wishlist", authenticateToken, (req, res) => {
+  const { userId, sneakerId } = req.body;
+
+  if (!userId || !sneakerId) {
+    return res.status(400).json({ message: "L'ID utilisateur et l'ID du sneaker sont requis." });
+  }
+
+  const query = "DELETE FROM wishlist WHERE user_id = ? AND sneaker_id = ?";
+  db.query(query, [userId, sneakerId], (err) => {
+    if (err) {
+      console.error("Erreur lors de la suppression de la wishlist :", err);
+      return res.status(500).json({ message: "Erreur serveur." });
+    }
+
+    res.status(200).json({ message: "Sneaker supprimé de la wishlist." });
+  });
+});
+
+// --- Démarrage du serveur ---
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Serveur démarré sur http://localhost:${port}`);
