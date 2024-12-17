@@ -7,8 +7,8 @@ require('dotenv').config();
 
 // Vérification des variables d'environnement obligatoires
 if (!process.env.JWT_SECRET) {
-  console.error('Erreur : JWT_SECRET n\'est pas défini dans le fichier .env');
-  process.exit(1);
+  console.error("Erreur : JWT_SECRET n'est pas défini dans le fichier .env");
+process.exit(1);
 }
 
 // Créer une instance de l'application Express
@@ -58,15 +58,33 @@ const authenticateToken = (req, res, next) => {
 
 // --- ROUTES ---
 
-// Route pour récupérer tous les sneakers
+// Route pour récupérer tous les sneakers avec filtres dynamiques
+a// Backend : Recherche basée sur la requête utilisateur, avec une limite de 25 résultats
 app.get('/api/sneakers', (req, res) => {
-  const query = 'SELECT * FROM sneakers';
+  const { query } = req.query;
 
-  db.query(query, (err, results) => {
+  let searchQuery = 'SELECT * FROM sneakers WHERE 1=1';
+  const params = [];
+
+  if (query) {
+    searchQuery += ' AND (brand LIKE ? OR model LIKE ? OR colorway LIKE ?)';
+    params.push(`%${query}%`, `%${query}%`, `%${query}%`);
+  }
+
+  // Ajouter une limite aux résultats
+  const maxResults = 25;
+  searchQuery += ` LIMIT ${maxResults}`;
+
+  db.query(searchQuery, params, (err, results) => {
     if (err) {
-      console.error('Erreur lors de la récupération des sneakers:', err);
-      return res.status(500).json({ message: 'Erreur serveur lors de la récupération des sneakers.' });
+      console.error('Erreur lors de la recherche des sneakers:', err);
+      return res.status(500).json({ message: 'Erreur serveur lors de la recherche.' });
     }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Aucun résultat trouvé.' });
+    }
+
     res.status(200).json(results);
   });
 });
@@ -94,29 +112,6 @@ app.get('/api/sneakers/:id', (req, res) => {
   });
 });
 
-// Route pour rechercher des sneakers en fonction de la marque, couleur ou modèle
-app.get('/api/sneakers/search', (req, res) => {
-  const { query } = req.query; // "query" est le paramètre de recherche dans la requête GET
-
-  if (!query) {
-    return res.status(400).json({ message: 'Le paramètre de recherche est requis.' });
-  }
-
-  const searchQuery = `
-    SELECT * FROM sneakers
-    WHERE brand LIKE ? OR color LIKE ? OR model LIKE ?
-  `;
-
-  db.query(searchQuery, [`%${query}%`, `%${query}%`, `%${query}%`], (err, results) => {
-    if (err) {
-      console.error('Erreur lors de la recherche des sneakers:', err);
-      return res.status(500).json({ message: 'Erreur serveur lors de la recherche.' });
-    }
-
-    res.status(200).json(results);
-  });
-});
-
 // Route pour enregistrer un nouvel utilisateur
 app.post('/api/register', async (req, res) => {
   const { email, password, username } = req.body;
@@ -129,7 +124,7 @@ app.post('/api/register', async (req, res) => {
     const checkUserQuery = 'SELECT * FROM users WHERE email = ?';
     db.query(checkUserQuery, [email], async (err, results) => {
       if (err) {
-        console.error('Erreur lors de la vérification de l\'utilisateur:', err);
+        console.error("Erreur lors de la vérification de l'utilisateur:", err);
         return res.status(500).json({ message: 'Erreur serveur.' });
       }
 
@@ -141,15 +136,15 @@ app.post('/api/register', async (req, res) => {
       const insertUserQuery = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
       db.query(insertUserQuery, [username, email, hashedPassword], (err) => {
         if (err) {
-          console.error('Erreur lors de l\'insertion de l\'utilisateur:', err);
-          return res.status(500).json({ message: 'Erreur serveur lors de l\'inscription.' });
+          console.error("Erreur lors de l'insertion de l'utilisateur:", err);
+          return res.status(500).json({ message: "Erreur serveur lors de l'inscription." });
         }
 
         res.status(201).json({ message: 'Utilisateur créé avec succès.' });
       });
     });
   } catch (error) {
-    console.error('Erreur lors de l\'inscription:', error);
+    console.error("Erreur lors de l'inscription:", error);
     res.status(500).json({ message: 'Erreur serveur.' });
   }
 });
@@ -165,7 +160,7 @@ app.post('/api/login', (req, res) => {
   const query = 'SELECT * FROM users WHERE email = ?';
   db.query(query, [email], async (err, results) => {
     if (err) {
-      console.error('Erreur lors de la recherche de l\'utilisateur:', err);
+      console.error("Erreur lors de la recherche de l'utilisateur:", err);
       return res.status(500).json({ message: 'Erreur serveur.' });
     }
 
@@ -183,40 +178,6 @@ app.post('/api/login', (req, res) => {
 
     res.status(200).json({ message: 'Connexion réussie.', token });
   });
-});
-
-// Route sécurisée pour la wishlist
-app.get('/api/wishlist', authenticateToken, (req, res) => {
-  const query = `
-    SELECT sneakers.* 
-    FROM wishlist 
-    JOIN sneakers ON wishlist.sneaker_id = sneakers.id 
-    WHERE wishlist.user_id = ?
-  `;
-  db.query(query, [req.user.userId], (err, results) => {
-    if (err) return res.status(500).json({ message: 'Erreur lors de la récupération.' });
-    res.status(200).json(results);
-  });
-});
-
-// Route d'ajout à la wishlist
-app.post('/api/wishlist', authenticateToken, (req, res) => {
-  const { sneakerId } = req.body;
-
-  if (!sneakerId) {
-    return res.status(400).json({ message: 'ID du sneaker requis.' });
-  }
-
-  const insertQuery = 'INSERT INTO wishlist (user_id, sneaker_id) VALUES (?, ?)';
-  db.query(insertQuery, [req.user.userId, sneakerId], (err) => {
-    if (err) return res.status(500).json({ message: 'Erreur lors de l\'ajout.' });
-    res.status(201).json({ message: 'Ajouté à la wishlist avec succès.' });
-  });
-});
-
-// Gestion des routes inexistantes
-app.use((req, res) => {
-  res.status(404).json({ message: 'La ressource demandée est introuvable.' });
 });
 
 // Démarrer le serveur
