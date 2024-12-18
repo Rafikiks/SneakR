@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
-import { useWishlist } from '../context/WishlistContext.tsx'; // Utilisation de la wishlist
+import { useWishlist } from '../context/WishlistContext.tsx.tsx'; // Utilisation de la wishlist
 
 interface Sneaker {
   id: number;

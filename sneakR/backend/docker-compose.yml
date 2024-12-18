@@ -3,65 +3,43 @@ version: '3.8'
 services:
   db:
     image: mysql:8.0
-    container_name: mysql_sneakers
-    restart: always
+    container_name: mysql-container
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: sneakers_db
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mon_projet_db
     volumes:
       - db_data:/var/lib/mysql
-
+    ports:
+      - "3306:3306"
+  
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin_sneakers
-    restart: always
+    container_name: phpmyadmin-container
     environment:
       PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: rootpassword
     ports:
       - "8080:80"
     depends_on:
       - db
 
-  scraper:
+  backend:
     build:
-      context: ./scraper
-      dockerfile: Dockerfile
-    container_name: scraper
-    depends_on:
-      - db
-    environment:
-      DB_HOST: db
-      DB_USER: user
-      DB_PASSWORD: password
-      DB_DATABASE: sneakers_db
-
-  php:
-    build:
-      context: ./php
-      dockerfile: Dockerfile
-    container_name: php_api
-    restart: always
+      context: ./backend  # Chemin vers le dossier backend
+      dockerfile: Dockerfile # Le nom du Dockerfile dans le dossier backend
+    container_name: backend-container
+    volumes:
+      - ./backend/src:/var/www/html  # Lier le code source du backend dans le container
     ports:
       - "8000:80"
     depends_on:
       - db
-
-  react:
-    image: node:18
-    container_name: react_app
-    volumes:
-      - ./frontend:/usr/src/app
-    working_dir: /usr/src/app
-    ports:
-      - "3000:3000"
-    command: ["npm", "start"]
     networks:
-      - default
+      - app-network
 
 volumes:
   db_data:
+
+networks:
+  app-network:
+    driver: bridge

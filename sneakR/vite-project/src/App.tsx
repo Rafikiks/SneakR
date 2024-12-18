@@ -1,14 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import HomePage from "./page/HomePage";
-import LoginPage from "./page/LoginPage";
-import RegisterPage from "./page/RegisterPage";
-import WishlistPage from "./page/WishlistPage";
-import SneakersList from "./components/SneakerList";
-import SneakerDetailsPage from "./page/SneakerDetailsPage";
-import { WishlistProvider } from "./context/WishlistContext.tsx"; // Mise à jour du nom pour Wishlist
-import SearchResultsPage from "./page/SearchResults"; // Page pour les résultats de recherche
-import ProfilePage from "./page/ProfilePage"; // Importer la page du profil
+import Navbar from "./components/Navbar.tsx";
+import HomePage from "./page/HomePage.tsx";
+import LoginPage from "./page/LoginPage.tsx";
+import RegisterPage from "./page/RegisterPage.tsx";
+import WishlistPage from "./page/WishlistPage.tsx";
+import SneakersList from "./components/SneakerList.tsx";
+import SneakerDetailsPage from "./page/SneakerDetailsPage.tsx";
+import { WishlistProvider } from "./context/WishlistContext.tsx.tsx"; // Mise à jour du nom pour Wishlist
+import SearchResultsPage from "./page/SearchResults.tsx"; // Page pour les résultats de recherche
+import ProfilePage from "./page/ProfilePage.tsx"; // Importer la page du profil
 
 // Page principale de l'application
 const App = () => {
