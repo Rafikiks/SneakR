@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaHome, FaSignInAlt, FaRegHeart, FaSignOutAlt } from 'react-icons/fa'; // Ajout de l'icône de déconnexion
+import { FaHome, FaSignInAlt, FaRegHeart, FaSignOutAlt, FaRegListAlt } from 'react-icons/fa'; // Ajout de l'icône de collection
 import Logo from '../assets/logo.png'; // Assurez-vous que le chemin est correct
 import SearchBar from './SearchBar';  // Importation de la SearchBar
 
@@ -81,6 +81,10 @@ const Navbar = () => {
         {token ? (
           <>
             <StyledLink to="/profile">Profil</StyledLink>
+            <StyledLink to="/collection">
+              <FaRegListAlt /> {/* Icône de collection */}
+              Collection
+            </StyledLink>
             <StyledLink to="/" onClick={handleLogout}>
               <FaSignOutAlt /> {/* Icône de déconnexion */}
               Déconnexion

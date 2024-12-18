@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
+import { FaRegHeart, FaHeart, FaRegBookmark, FaBookmark } from "react-icons/fa"; // Import des icônes
 
 interface Sneaker {
   id: number;
@@ -72,9 +73,43 @@ const SneakerGender = styled.div`
   text-transform: capitalize;
 `;
 
-const StyledLink = styled(Link)`
-  text-decoration: none;
-  color: inherit;
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+`;
+
+const ActionButton = styled.button`
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+  }
+
+  &.add-to-collection {
+    background-color: #28a745; /* Vert */
+    color: white;
+
+    &:hover {
+      background-color: #218838; /* Vert foncé */
+    }
+  }
+
+  &.add-to-wishlist {
+    background-color: #007bff; /* Bleu */
+    color: white;
+
+    &:hover {
+      background-color: #0056b3; /* Bleu foncé */
+    }
+  }
 `;
 
 const PaginationContainer = styled.div`
@@ -86,7 +121,7 @@ const PaginationContainer = styled.div`
 `;
 
 const PaginationButton = styled.button`
-  background-color: #28a745;  /* Vert clair */
+  background-color: #28a745; /* Vert clair */
   color: white;
   font-size: 1rem;
   padding: 10px 20px;
@@ -96,7 +131,7 @@ const PaginationButton = styled.button`
   transition: background-color 0.3s ease, transform 0.2s ease;
 
   &:hover {
-    background-color: #218838;  /* Vert foncé au survol */
+    background-color: #218838; /* Vert foncé */
     transform: translateY(-3px);
   }
 
@@ -111,7 +146,7 @@ const PaginationButton = styled.button`
 `;
 
 const PageNumber = styled.span`
-  font-family: 'Roboto', sans-serif;  /* Appliquer la police Roboto */
+  font-family: "Roboto", sans-serif; /* Appliquer la police Roboto */
   font-size: 1.1rem;
   font-weight: 600;
   color: #333;
@@ -122,10 +157,12 @@ const SneakerListPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalSneakers, setTotalSneakers] = useState<number>(1969); // Total de sneakers
+  const [totalSneakers, setTotalSneakers] = useState<number>(1969); // Nombre total de sneakers
   const [sneakersPerPage] = useState<number>(25); // Nombre d'éléments par page
+  const [wishlist, setWishlist] = useState<number[]>([]); // Wishlist
+  const [collection, setCollection] = useState<number[]>([]); // Collection
 
-  // Fonction pour récupérer les sneakers par page
+  // Récupérer les sneakers par page
   const fetchSneakers = async (page: number) => {
     try {
       const response = await axios.get(`http://localhost:3001/api/sneakers/all`, {
@@ -145,35 +182,44 @@ const SneakerListPage = () => {
     }
   };
 
-  // Charger les sneakers lors du changement de page
   useEffect(() => {
     fetchSneakers(currentPage);
   }, [currentPage]);
+
+  useEffect(() => {
+    const storedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    const storedCollection = JSON.parse(localStorage.getItem("collection") || "[]");
+    setWishlist(storedWishlist);
+    setCollection(storedCollection);
+  }, []);
+
+  // Ajouter à la collection
+  const handleAddToCollection = (sneaker: Sneaker) => {
+    const updatedCollection = [...collection, sneaker.id];
+    setCollection(updatedCollection);
+    localStorage.setItem("collection", JSON.stringify(updatedCollection));
+    alert(`${sneaker.brand} - ${sneaker.colorway} ajouté à la collection !`);
+  };
+
+  // Ajouter à la wishlist
+  const handleAddToWishlist = (sneaker: Sneaker) => {
+    const updatedWishlist = [...wishlist, sneaker.id];
+    setWishlist(updatedWishlist);
+    localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+    alert(`${sneaker.brand} - ${sneaker.colorway} ajouté à la wishlist !`);
+  };
 
   if (loading) return <div>Chargement...</div>;
   if (error) return <div>{error}</div>;
 
   const totalPages = Math.ceil(totalSneakers / sneakersPerPage);
 
-  // Gestion de la pagination
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
   return (
     <>
       <SneakerListContainer>
         {sneakers.map((sneaker) => (
           <SneakerCard key={sneaker.id}>
-            <StyledLink to={`/sneakers/${sneaker.id}`}>
+            <Link to={`/sneakers/${sneaker.id}`}>
               <SneakerImage
                 src={sneaker.image_url}
                 alt={sneaker.brand}
@@ -188,20 +234,37 @@ const SneakerListPage = () => {
                 <SneakerPrice>{sneaker.estimated_market_value} €</SneakerPrice>
                 <SneakerGender>{sneaker.gender}</SneakerGender>
               </SneakerDetails>
-            </StyledLink>
+            </Link>
+            <ButtonContainer>
+              <ActionButton
+                className="add-to-collection"
+                onClick={() => handleAddToCollection(sneaker)}
+              >
+                {collection.includes(sneaker.id) ? <FaBookmark /> : <FaRegBookmark />} Ajouter à la collection
+              </ActionButton>
+              <ActionButton
+                className="add-to-wishlist"
+                onClick={() => handleAddToWishlist(sneaker)}
+              >
+                {wishlist.includes(sneaker.id) ? <FaHeart /> : <FaRegHeart />} Ajouter à la wishlist
+              </ActionButton>
+            </ButtonContainer>
           </SneakerCard>
         ))}
       </SneakerListContainer>
 
       <PaginationContainer>
-        <PaginationButton onClick={handlePrevPage} disabled={currentPage === 1}>
+        <PaginationButton
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
           Précédent
         </PaginationButton>
         <PageNumber>
           Page {currentPage} sur {totalPages}
         </PageNumber>
         <PaginationButton
-          onClick={handleNextPage}
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages}
         >
           Suivant
@@ -211,4 +274,4 @@ const SneakerListPage = () => {
   );
 };
 
-export default SneakerListPage;
+export default SneakerListPage

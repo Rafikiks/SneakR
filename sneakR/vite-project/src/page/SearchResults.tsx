@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import { FaRegHeart, FaHeart, FaRegBookmark } from "react-icons/fa"; // Import des icônes de coeur et de collection
+import { FaRegHeart, FaHeart, FaRegBookmark, FaBookmark } from "react-icons/fa"; // Import des icônes de coeur et de collection
 
 interface Sneaker {
   id: number;
@@ -17,6 +17,7 @@ const SearchResultsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [wishlist, setWishlist] = useState<number[]>([]); // Gérer l'état des IDs de sneakers ajoutées à la wishlist
+  const [collection, setCollection] = useState<number[]>([]); // Gérer l'état des IDs de sneakers ajoutées à la collection
 
   useEffect(() => {
     const fetchSneakers = async () => {
@@ -41,12 +42,21 @@ const SearchResultsPage: React.FC = () => {
     fetchSneakers();
   }, [location.state]);
 
-  // Fonction pour ajouter la sneaker à la wishlist
+  // Fonction pour ajouter ou retirer une sneaker de la wishlist
   const toggleWishlist = (id: number) => {
     setWishlist((prevWishlist) =>
       prevWishlist.includes(id)
         ? prevWishlist.filter((item) => item !== id) // Retirer de la wishlist si déjà dedans
         : [...prevWishlist, id] // Ajouter à la wishlist si pas dedans
+    );
+  };
+
+  // Fonction pour ajouter ou retirer une sneaker de la collection
+  const toggleCollection = (id: number) => {
+    setCollection((prevCollection) =>
+      prevCollection.includes(id)
+        ? prevCollection.filter((item) => item !== id) // Retirer de la collection si déjà dedans
+        : [...prevCollection, id] // Ajouter à la collection si pas dedans
     );
   };
 
@@ -74,17 +84,31 @@ const SearchResultsPage: React.FC = () => {
         >
           {/* Affichage des sneakers sous forme de cartes */}
           {sneakers.map((sneaker) => (
-            <div
+            <Link
+              to={`/sneakers/${sneaker.id}`} // Redirection vers la page de détails de la sneaker
               key={sneaker.id}
               className="sneaker-card"
               style={{
                 border: "1px solid #ccc",
                 borderRadius: "8px",
                 overflow: "hidden",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                 textAlign: "center",
                 padding: "16px",
                 backgroundColor: "#fff",
+                textDecoration: "none", // Enlever le soulignement du lien
+                transition: "transform 0.3s ease, box-shadow 0.3s ease", // Ajout de la transition pour l'animation
+              }}
+              onMouseEnter={(e) => {
+                // Effet au survol
+                const card = e.currentTarget;
+                card.style.transform = "scale(1.05)"; // Zoom léger
+                card.style.boxShadow = "0 10px 20px rgba(0, 0, 0, 0.1)"; // Ombre pour surélévation
+              }}
+              onMouseLeave={(e) => {
+                // Retour à la position initiale
+                const card = e.currentTarget;
+                card.style.transform = "scale(1)"; // Annuler le zoom
+                card.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)"; // Ombre de base
               }}
             >
               {/* Image de la sneaker */}
@@ -129,7 +153,7 @@ const SearchResultsPage: React.FC = () => {
                   )}
                 </button>
                 <button
-                  onClick={() => console.log(`Added sneaker ${sneaker.id} to collection`)}
+                  onClick={() => toggleCollection(sneaker.id)}
                   style={{
                     backgroundColor: "transparent",
                     border: "none",
@@ -138,10 +162,15 @@ const SearchResultsPage: React.FC = () => {
                     borderRadius: "50%",
                   }}
                 >
-                  <FaRegBookmark style={{ fontSize: "24px", color: "#555" }} />
+                  {/* Affiche un drapeau plein si la sneaker est dans la collection */}
+                  {collection.includes(sneaker.id) ? (
+                    <FaBookmark style={{ fontSize: "24px", color: "black" }} />
+                  ) : (
+                    <FaRegBookmark style={{ fontSize: "24px", color: "#555" }} />
+                  )}
                 </button>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

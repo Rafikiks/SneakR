@@ -37,6 +37,29 @@ const LogoutButton = styled.button`
   }
 `;
 
+const ProfilePicture = styled.img`
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+`;
+
+const CollectionButton = styled.button`
+  padding: 12px;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
 const ProfilePage = () => {
   const [user, setUser] = useState<any>(null); // Stocker les infos utilisateur
   const [error, setError] = useState('');
@@ -48,8 +71,18 @@ const ProfilePage = () => {
       navigate('/login'); // Si pas de token, rediriger vers la page de connexion
     } else {
       // Décode le token pour récupérer l'ID de l'utilisateur
-      const decodedToken = JSON.parse(atob(token.split('.')[1])); // Décoder le token JWT (attention : c'est une méthode basique)
-      const userId = decodedToken.id;
+      const decodedToken: any = JSON.parse(atob(token.split('.')[1])); // Décoder le token JWT
+      const userId = decodedToken.sub; // Utiliser "sub" au lieu de "id"
+
+      // Log de debug pour vérifier les valeurs du token et de l'ID utilisateur
+      console.log("Decoded Token:", decodedToken);
+      console.log("User ID:", userId);
+
+      // Vérifier si userId est défini avant de faire la requête
+      if (!userId) {
+        console.error("ID utilisateur non trouvé dans le token.");
+        return;
+      }
 
       // Récupérer les infos de l'utilisateur avec l'ID dans l'URL
       axios
@@ -70,6 +103,10 @@ const ProfilePage = () => {
     navigate('/login'); // Rediriger vers la page de connexion
   };
 
+  const handleGoToCollection = () => {
+    navigate('/collection'); // Naviguer vers la page de collection de chaussures
+  };
+
   return (
     <ProfilePageContainer>
       <ProfileTitle>Mon Profil</ProfileTitle>
@@ -77,15 +114,16 @@ const ProfilePage = () => {
       
       {user ? (
         <UserInfo>
-          <p><strong>Nom:</strong> {user.name}</p>
+          <ProfilePicture src={user.profilePicture || '/default-profile-pic.jpg'} alt="Profile" />
+          <p><strong>Nom d'utilisateur:</strong> {user.username}</p>
           <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Adresse:</strong> {user.address}</p> {/* Exemple d'info utilisateur */}
-          {/* Vous pouvez ajouter d'autres informations selon ce que vous récupérez */}
+          <p><strong>Adresse:</strong> {user.address || 'Non spécifiée'}</p> {/* Exemple d'info utilisateur */}
         </UserInfo>
       ) : (
         <div>Chargement des données...</div>
       )}
 
+      <CollectionButton onClick={handleGoToCollection}>Voir ma collection de chaussures</CollectionButton>
       <LogoutButton onClick={handleLogout}>Se déconnecter</LogoutButton>
     </ProfilePageContainer>
   );

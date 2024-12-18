@@ -66,7 +66,6 @@ const ShopButton = styled(Link)`
   transition: all 0.3s ease;
   display: inline-block;
   
-  /* Responsivité : ajustement pour les petits écrans */
   @media (max-width: 768px) {
     padding: 12px 25px;
     font-size: 1.2rem;
@@ -186,20 +185,21 @@ const HomePage = () => {
   const [sneakers, setSneakers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [visibleSneakers, setVisibleSneakers] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const urbanImages = [
-    '/assets/urban-style1.jpg',
-    '/assets/urban-style2.jpg',
-    '/assets/urban-style3.jpg',
-    '/assets/urban-style4.jpg',
-  ];
+  const [carouselImages, setCarouselImages] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchSneakers = async () => {
       try {
         const response = await axios.get('http://54.37.12.181:1337/api/sneakers');
-        setSneakers(response.data.data);
+        const data = response.data.data;
+
+        // Mise à jour des sneakers et sélection de quelques images pour le carrousel
+        setSneakers(data);
+        const selectedImages = data.slice(0, 4).map((sneaker: any) => sneaker.attributes.image.original);
+        setCarouselImages(selectedImages);
+
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -212,13 +212,15 @@ const HomePage = () => {
   }, []);
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % urbanImages.length);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % carouselImages.length);
   };
 
   const goToPrev = () => {
-    setCurrentIndex(
-      (prevIndex) => (prevIndex - 1 + urbanImages.length) % urbanImages.length
-    );
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + carouselImages.length) % carouselImages.length);
+  };
+
+  const loadMoreSneakers = () => {
+    setVisibleSneakers(visibleSneakers + 10); // Augmenter de 10 sneakers à chaque clic
   };
 
   if (loading) return <div>Chargement...</div>;
@@ -229,7 +231,7 @@ const HomePage = () => {
       <HeroSection>
         <CarouselWrapper>
           <CarouselTrack style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
-            {urbanImages.map((image, index) => (
+            {carouselImages.map((image, index) => (
               <CarouselImage key={index} imageUrl={image} />
             ))}
           </CarouselTrack>
@@ -247,7 +249,7 @@ const HomePage = () => {
 
       <h2>Nos Sneakers Populaires</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '30px' }}>
-        {sneakers.slice(0, 10).map((sneaker: any) => (
+        {sneakers.slice(0, visibleSneakers).map((sneaker: any) => (
           <SneakerCard key={sneaker.id}>
             <SneakerImage src={sneaker.attributes.image.original} alt={sneaker.attributes.name} />
             <SneakerInfo>
@@ -257,6 +259,10 @@ const HomePage = () => {
           </SneakerCard>
         ))}
       </div>
+
+      {visibleSneakers < sneakers.length && (
+        <button onClick={loadMoreSneakers}>Voir plus</button>
+      )}
     </Container>
   );
 };
