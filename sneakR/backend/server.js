@@ -275,6 +275,34 @@ app.delete("/api/wishlist", authenticateToken, (req, res) => {
   });
 });
 
+
+
+app.get("/api/profile/:id", authenticateToken, (req, res) => {
+  const userId = req.params.id;  // Récupère l'ID de l'utilisateur dans l'URL
+  const tokenUserId = req.user.id;  // Récupère l'ID utilisateur du token
+
+  if (userId !== tokenUserId) {
+    return res.status(403).json({ message: "Accès interdit. Vous ne pouvez pas accéder à ce profil." });
+  }
+
+  // Requête SQL pour récupérer les données utilisateur
+  const query = "SELECT name, email, address FROM users WHERE id = ?";
+  
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Erreur lors de la récupération du profil :", err);
+      return res.status(500).json({ message: "Erreur serveur." });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    // Renvoie les données utilisateur
+    res.status(200).json(results[0]);
+  });
+});
+
 // --- Démarrage du serveur ---
 const port = process.env.PORT || 3001;
 app.listen(port, () => {

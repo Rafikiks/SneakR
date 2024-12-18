@@ -122,13 +122,22 @@ const SneakerListPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [sneakersPerPage] = useState<number>(15); // Nombre d'éléments par page
+  const [totalSneakers, setTotalSneakers] = useState<number>(1969); // Total de sneakers
+  const [sneakersPerPage] = useState<number>(25); // Nombre d'éléments par page
 
-  // Fonction pour récupérer toutes les sneakers
-  const fetchAllSneakers = async () => {
+  // Fonction pour récupérer les sneakers par page
+  const fetchSneakers = async (page: number) => {
     try {
-      const response = await axios.get(`http://localhost:3001/api/sneakers/all`);
-      setSneakers(response.data);
+      const response = await axios.get(`http://localhost:3001/api/sneakers/all`, {
+        params: { page, limit: sneakersPerPage },
+      });
+
+      if (response.data.sneakers) {
+        setSneakers(response.data.sneakers);
+        setTotalSneakers(response.data.totalSneakers);
+      } else {
+        setError("Données mal formatées.");
+      }
       setLoading(false);
     } catch (err) {
       setError("Une erreur est survenue lors du chargement des sneakers.");
@@ -136,22 +145,19 @@ const SneakerListPage = () => {
     }
   };
 
-  // Charger toutes les sneakers au montage du composant
+  // Charger les sneakers lors du changement de page
   useEffect(() => {
-    fetchAllSneakers();
-  }, []);
+    fetchSneakers(currentPage);
+  }, [currentPage]);
 
   if (loading) return <div>Chargement...</div>;
   if (error) return <div>{error}</div>;
 
-  // Découper la liste des sneakers en pages de 15 éléments
-  const indexOfLastSneaker = currentPage * sneakersPerPage;
-  const indexOfFirstSneaker = indexOfLastSneaker - sneakersPerPage;
-  const currentSneakers = sneakers.slice(indexOfFirstSneaker, indexOfLastSneaker);
+  const totalPages = Math.ceil(totalSneakers / sneakersPerPage);
 
-  // Fonction pour changer la page
+  // Gestion de la pagination
   const handleNextPage = () => {
-    if (currentPage < Math.ceil(sneakers.length / sneakersPerPage)) {
+    if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
   };
@@ -165,7 +171,7 @@ const SneakerListPage = () => {
   return (
     <>
       <SneakerListContainer>
-        {currentSneakers.map((sneaker) => (
+        {sneakers.map((sneaker) => (
           <SneakerCard key={sneaker.id}>
             <StyledLink to={`/sneakers/${sneaker.id}`}>
               <SneakerImage
@@ -192,11 +198,11 @@ const SneakerListPage = () => {
           Précédent
         </PaginationButton>
         <PageNumber>
-          Page {currentPage} sur {Math.ceil(sneakers.length / sneakersPerPage)}
+          Page {currentPage} sur {totalPages}
         </PageNumber>
         <PaginationButton
           onClick={handleNextPage}
-          disabled={currentPage === Math.ceil(sneakers.length / sneakersPerPage)}
+          disabled={currentPage === totalPages}
         >
           Suivant
         </PaginationButton>

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import axios from "axios";
 
+// Styles
 const WishlistContainer = styled.div`
   max-width: 1200px;
   margin: 50px auto;
@@ -76,49 +77,52 @@ const TotalContainer = styled.div`
   color: #333;
 `;
 
-const WishlistPage = () => {
+// Page Wishlist
+const WishlistPage: React.FC = () => {
   const [wishlistItems, setWishlistItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const userId = 1; // Id utilisateur fictif, remplace-le par une vraie logique si nécessaire
 
-  const wishlistProductIds = [3109, 456, 1234];  // Liste des produits à afficher dans la wishlist
-
-  const fetchWishlistItems = async () => {
-    try {
-      const fetchedItems = await Promise.all(
-        wishlistProductIds.map(async (id) => {
-          const response = await axios.get(`http://localhost:3001/api/wishlist/${id}`);
-          if (response.status === 200 && response.data) {
-            return response.data;
+  useEffect(() => {
+    // Récupération de la wishlist utilisateur
+    const fetchWishlist = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          `http://localhost:3001/api/wishlist/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
           }
-          throw new Error('Données invalides');
-        })
-      );
-      setWishlistItems(fetchedItems);
-      setLoading(false);
-    } catch (error) {
-      setError('Erreur lors du chargement des produits de la wishlist');
-      setLoading(false);
-    }
-  };
+        );
+        setWishlistItems(response.data.wishlist);
+        setLoading(false);
+      } catch (err) {
+        console.error("Erreur lors de la récupération de la wishlist", err);
+        setError("Erreur lors du chargement de la wishlist.");
+        setLoading(false);
+      }
+    };
 
+    fetchWishlist();
+  }, [userId]);
+
+  // Suppression d'un article
   const handleRemoveItem = async (id: number) => {
     try {
       const response = await axios.delete(`http://localhost:3001/api/wishlist/${id}`);
       if (response.status === 200) {
         setWishlistItems(wishlistItems.filter((item) => item.id !== id));
       } else {
-        setError('Erreur lors de la suppression de l\'article');
+        setError("Erreur lors de la suppression de l'article.");
       }
-    } catch (error) {
-      setError('Erreur lors de la suppression de l\'article');
+    } catch (err) {
+      console.error("Erreur lors de la suppression de l'article", err);
+      setError("Erreur lors de la suppression de l'article.");
     }
   };
 
-  useEffect(() => {
-    fetchWishlistItems();
-  }, []);
-
+  // Calcul du prix total
   const totalPrice = wishlistItems.reduce((total, item) => {
     if (item.price && !isNaN(item.price)) {
       return total + item.price;
@@ -126,14 +130,19 @@ const WishlistPage = () => {
     return total;
   }, 0);
 
+  // Chargement ou affichage des erreurs
   if (loading) {
     return <p>Chargement...</p>;
   }
 
+  if (error) {
+    return <p style={{ color: "red" }}>{error}</p>;
+  }
+
+  // Affichage principal
   return (
     <WishlistContainer>
       <h2>Votre Wishlist</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
       {wishlistItems.length === 0 ? (
         <p>Votre wishlist est vide.</p>
       ) : (
@@ -143,10 +152,17 @@ const WishlistPage = () => {
               <ProductImage src={item.imageUrl} alt={item.name} />
               <div>
                 <ProductName>{item.name}</ProductName>
-                <ProductSize><strong>Taille :</strong> {item.selectedSize}</ProductSize>
+                <ProductSize>
+                  <strong>Taille :</strong> {item.selectedSize}
+                </ProductSize>
               </div>
             </ProductDetails>
-            <ProductPrice>{item.price && !isNaN(item.price) ? item.price.toFixed(2) : 'Prix indisponible'} €</ProductPrice>
+            <ProductPrice>
+              {item.price && !isNaN(item.price)
+                ? item.price.toFixed(2)
+                : "Prix indisponible"}{" "}
+              €
+            </ProductPrice>
             <HeartButton onClick={() => handleRemoveItem(item.id)}>
               ❤️ Retirer
             </HeartButton>

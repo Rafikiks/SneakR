@@ -144,8 +144,8 @@ const LoginPage = () => {
       const response = await axios.post('http://localhost:3001/api/login', { email, password });
       
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        navigate('/');
+        localStorage.setItem('token', response.data.token); // Stocker le token
+        navigate('/'); // Rediriger vers la page d'accueil ou autre
       }
     } catch (error: any) {
       setError(error.response ? error.response.data.message : 'Une erreur est survenue.');

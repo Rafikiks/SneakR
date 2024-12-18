@@ -1,13 +1,13 @@
-import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaHome, FaSignInAlt, FaRegHeart } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaHome, FaSignInAlt, FaRegHeart, FaSignOutAlt } from 'react-icons/fa'; // Ajout de l'icône de déconnexion
 import Logo from '../assets/logo.png'; // Assurez-vous que le chemin est correct
 import SearchBar from './SearchBar';  // Importation de la SearchBar
 
 // Styles pour le conteneur principal de la Navbar
 const NavbarContainer = styled.nav`
   padding: 15px 20px;
-  background-color: #f5f5f5;
+  background-color: #f5f5f5; /* Retour à la couleur de fond initiale */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -35,7 +35,7 @@ const LinksContainer = styled.div`
 // Styles pour les liens de navigation
 const StyledLink = styled(Link)`
   text-decoration: none;
-  color: #333;
+  color: #333; /* Couleur du texte (plus foncé) */
   font-weight: bold;
   font-size: 1rem;
   display: flex;
@@ -55,8 +55,15 @@ const SearchContainer = styled.div`
   justify-content: center; /* Centre la barre de recherche */
 `;
 
-// Composant Navbar avec la barre de recherche incluse
 const Navbar = () => {
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token'); // Vérifie si le token existe
+
+  const handleLogout = () => {
+    localStorage.removeItem('token'); // Retirer le token lors de la déconnexion
+    navigate('/login'); // Rediriger vers la page de connexion
+  };
+
   return (
     <NavbarContainer>
       {/* Logo (cliquable pour aller à Sneakers List) */}
@@ -71,18 +78,30 @@ const Navbar = () => {
 
       {/* Liens de navigation */}
       <LinksContainer>
-        <StyledLink to="/">
-          <FaHome /> {/* Icône de maison */}
-          Accueil
-        </StyledLink>
-        <StyledLink to="/login">
-          <FaSignInAlt /> {/* Icône de connexion */}
-          Connexion
-        </StyledLink>
-        <StyledLink to="/wishlist">
-          <FaRegHeart /> {/* Icône de wishlist */}
-          Wishlist
-        </StyledLink>
+        {token ? (
+          <>
+            <StyledLink to="/profile">Profil</StyledLink>
+            <StyledLink to="/" onClick={handleLogout}>
+              <FaSignOutAlt /> {/* Icône de déconnexion */}
+              Déconnexion
+            </StyledLink>
+            <StyledLink to="/wishlist">
+              <FaRegHeart /> {/* Icône de wishlist */}
+              Wishlist
+            </StyledLink>
+          </>
+        ) : (
+          <>
+            <StyledLink to="/">
+              <FaHome /> {/* Icône de maison */}
+              Accueil
+            </StyledLink>
+            <StyledLink to="/login">
+              <FaSignInAlt /> {/* Icône de connexion */}
+              Connexion
+            </StyledLink>
+          </>
+        )}
       </LinksContainer>
     </NavbarContainer>
   );

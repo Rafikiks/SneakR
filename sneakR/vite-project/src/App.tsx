@@ -8,6 +8,7 @@ import SneakersList from "./components/SneakerList";
 import SneakerDetailsPage from "./page/SneakerDetailsPage";
 import { WishlistProvider } from "./context/WishlistContext.tsx"; // Mise à jour du nom pour Wishlist
 import SearchResultsPage from "./page/SearchResults"; // Page pour les résultats de recherche
+import ProfilePage from "./page/ProfilePage"; // Importer la page du profil
 
 // Page principale de l'application
 const App = () => {
@@ -44,6 +45,9 @@ const AppRoutes = () => {
         {/* Routes pour l'authentification */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Nouvelle route pour le profil */}
+        <Route path="/profile" element={<ProfilePage />} />
 
         {/* Gestion des routes non trouvées */}
         <Route path="*" element={<h2>Page non trouvée</h2>} />
